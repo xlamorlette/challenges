@@ -1,0 +1,10 @@
+# Python virtual environments
+.pyenv-linux
+.pyenv-windows
+
+# Build folders
+build
+
+# Links to executables
+main
+main_debug
