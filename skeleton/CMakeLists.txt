@@ -5,6 +5,8 @@ include(../CMakeListsCommon.cmake)
 project(main)
 
 set(SOURCE_FILES
+    A.cpp
+    A.hpp
     main.cpp
 )
 
