@@ -8,3 +8,6 @@ build
 # Links to executables
 main
 main_debug
+
+# CMake generated file
+CMakeUserPresets.json

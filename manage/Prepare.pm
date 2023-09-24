@@ -27,6 +27,7 @@ sub cleanMiscArtefacts {
     #    - verbose (optional)
     local $verbose = $_[0] || 0;
     if (platformIsLinux()) {
+        executeCommandIgnoreReturnCode("rm -rf CMakeUserPresets.json", "clean CMakeUserPresets", $verbose);
         executeCommandIgnoreReturnCode("rm -rf .mypy_cache", "clean Mypy cache", $verbose);
         executeCommandIgnoreReturnCode("rm -rf test-reports 2>/dev/null", "clean test reports", $verbose);
         executeCommandIgnoreReturnCode("find . -name __pycache__ | xargs rm -rf", "clean Python caches", $verbose);
@@ -48,15 +49,17 @@ sub prepareBuild {
     #    - verbose (optional)
     my ($baseDirectory) = @_;
     local $verbose = $_[1] || 0;
-    if (platformIsWindows()) {
-        $cmakeExtraOptions .= " -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe";
-    }
+    executeTestCommand("$pyenv; conan profile detect --force", "detect Conan profile", $verbose);
     executeCommandIgnoreReturnCode("$mkdir $releaseBuildDirectory", "create Release build directory", $verbose);
     executeCommandIgnoreReturnCode("$mkdir $debugBuildDirectory", "create Debug build directory", $verbose);
-    executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Release "
-        . "$cmakeExtraOptions $baseDirectory", "call cmake for Release", $verbose);
-    executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug "
-        . "$cmakeExtraOptions $baseDirectory", "call cmake for Debug", $verbose);
+    executeTestCommand("$pyenv; conan install . -s build_type=Release --output-folder=$releaseBuildDirectory --build=missing",
+        "install Conan packages in Release mode", $verbose);
+    executeTestCommand("$pyenv; conan install . -s build_type=Debug --output-folder=$debugBuildDirectory --build=missing",
+        "install Conan packages in Debug mode", $verbose);
+    executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Release $baseDirectory",
+        "call CMake in Release mode", $verbose);
+    executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug $baseDirectory",
+        "call CMake in Debug mode", $verbose);
 }
 
 sub preparePyenv {
