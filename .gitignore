@@ -6,8 +6,8 @@
 build
 
 # Links to executables
-main
-main_debug
+command_line_debug
+command_line_release
 
 # CMake generated file
 CMakeUserPresets.json

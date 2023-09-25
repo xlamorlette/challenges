@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 # manage.pl
 
+# TODO: rather one single script, and one CMakeLists, at top level
+
 use lib '../manage';
 use Configure;
 use Execute;
@@ -97,7 +99,7 @@ exit 0;
 
 sub runClean {
     if (platformIsLinux()) {
-        foreach $link ("main", "main_debug") {
+        foreach $link ("command_line_release", "command_line_debug") {
             executeCommandIgnoreReturnCode("$rm $link", "clean Linux binary link", $verbose);
         }
     }
@@ -121,14 +123,14 @@ sub runBuildDebug {
 
 sub runRelease {
     if (platformIsLinux()) {
-        executeTestCommand("ln -sf $releaseBuildDirectory/main main",
-            "create link to main binary in Release mode", $verbose);
+        executeTestCommand("ln -sf $releaseBuildDirectory/command_line/command_line command_line_release",
+            "create link to command_line binary in Release mode", $verbose);
     }
 }
 
 sub runDebug {
     if (platformIsLinux()) {
-        executeTestCommand("ln -sf $debugBuildDirectory/main main_debug",
-            "create link to main binary in Debug mode", $verbose);
+        executeTestCommand("ln -sf $debugBuildDirectory/command_line/command_line command_line_debug",
+            "create link to command_line binary in Debug mode", $verbose);
     }
 }
