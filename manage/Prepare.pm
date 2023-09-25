@@ -27,12 +27,14 @@ sub cleanMiscArtefacts {
     #    - verbose (optional)
     local $verbose = $_[0] || 0;
     if (platformIsLinux()) {
-        executeCommandIgnoreReturnCode("rm -rf CMakeUserPresets.json", "clean CMakeUserPresets", $verbose);
         executeCommandIgnoreReturnCode("rm -rf .mypy_cache", "clean Mypy cache", $verbose);
         executeCommandIgnoreReturnCode("rm -rf test-reports 2>/dev/null", "clean test reports", $verbose);
         executeCommandIgnoreReturnCode("find . -name __pycache__ | xargs rm -rf", "clean Python caches", $verbose);
         executeCommandIgnoreReturnCode("find . -name *.egg-info | xargs rm -rf", "clean Python eggs", $verbose);
         executeCommandIgnoreReturnCode("find . -name .pytest_cache | xargs rm -rf", "clean Pytest cache", $verbose);
+    }
+    if (platformIsWindows()) {
+        executeCommandIgnoreReturnCode("rm -rf CMakeUserPresets.json", "clean CMakeUserPresets", $verbose);
     }
 }
 
