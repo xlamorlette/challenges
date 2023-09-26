@@ -114,11 +114,19 @@ sub runPrepare {
 }
 
 sub runBuildRelease {
-    executeTestCommand("$pyenv; cd $releaseBuildDirectory; $ninja", "build in Release mode", $verbose);
+    if (platformIsLinux()) {
+        executeTestCommand("$pyenv; cd $releaseBuildDirectory; $ninja", "build in Release mode", $verbose);
+    } else {
+        executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake --build . --config Release", "build in Release mode", $verbose);
+    }
 }
 
 sub runBuildDebug {
-    executeTestCommand("$pyenv; cd $debugBuildDirectory; $ninja", "build in Debug mode", $verbose);
+    if (platformIsLinux()) {
+        executeTestCommand("$pyenv; cd $debugBuildDirectory; $ninja", "build in Debug mode", $verbose);
+    } else {
+        executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake --build . --config Debug", "build in Debug mode", $verbose);
+    }
 }
 
 sub runRelease {

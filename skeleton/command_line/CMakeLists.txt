@@ -7,8 +7,9 @@ find_package(ZLIB REQUIRED)
 add_executable(command_line ${SOURCE_FILES})
 
 target_link_libraries(command_line
-    ZLIB::ZLIB
-    skeleton_lib
+    PRIVATE
+        ZLIB::ZLIB
+        skeleton_lib
 )
 
 target_include_directories(command_line PRIVATE ..)

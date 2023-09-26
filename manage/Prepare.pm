@@ -27,15 +27,13 @@ sub cleanMiscArtefacts {
     #    - verbose (optional)
     local $verbose = $_[0] || 0;
     if (platformIsLinux()) {
-        executeCommandIgnoreReturnCode("rm -rf .mypy_cache", "clean Mypy cache", $verbose);
-        executeCommandIgnoreReturnCode("rm -rf test-reports 2>/dev/null", "clean test reports", $verbose);
+        executeCommandIgnoreReturnCode("$rm .mypy_cache", "clean Mypy cache", $verbose);
+        executeCommandIgnoreReturnCode("$rm test-reports 2>/dev/null", "clean test reports", $verbose);
         executeCommandIgnoreReturnCode("find . -name __pycache__ | xargs rm -rf", "clean Python caches", $verbose);
         executeCommandIgnoreReturnCode("find . -name *.egg-info | xargs rm -rf", "clean Python eggs", $verbose);
         executeCommandIgnoreReturnCode("find . -name .pytest_cache | xargs rm -rf", "clean Pytest cache", $verbose);
     }
-    if (platformIsWindows()) {
-        executeCommandIgnoreReturnCode("rm -rf CMakeUserPresets.json", "clean CMakeUserPresets", $verbose);
-    }
+    executeCommandIgnoreReturnCode("$rm CMakeUserPresets.json", "clean CMakeUserPresets", $verbose);
 }
 
 sub cleanPyenv {
@@ -58,10 +56,17 @@ sub prepareBuild {
         "install Conan packages in Release mode", $verbose);
     executeTestCommand("$pyenv; conan install . -s build_type=Debug --output-folder=$debugBuildDirectory --build=missing",
         "install Conan packages in Debug mode", $verbose);
-    executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Release $baseDirectory",
-        "call CMake in Release mode", $verbose);
-    executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug $baseDirectory",
-        "call CMake in Debug mode", $verbose);
+    if (platformIsLinux()) {
+        executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Release "
+            . " $baseDirectory", "call CMake in Release mode", $verbose);
+        executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug "
+            . " $baseDirectory", "call CMake in Debug mode", $verbose);
+    } else {
+        executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake -DCMAKE_TOOLCHAIN_FILE='conan_toolchain.cmake' "
+            . "-DCMAKE_BUILD_TYPE=Release $baseDirectory", "call CMake in Release mode", $verbose);
+        executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake -DCMAKE_TOOLCHAIN_FILE='conan_toolchain.cmake' "
+            . "-DCMAKE_BUILD_TYPE=Debug $baseDirectory", "call CMake in Debug mode", $verbose);
+    }
 }
 
 sub preparePyenv {
