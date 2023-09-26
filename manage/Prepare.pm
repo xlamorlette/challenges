@@ -1,7 +1,6 @@
 package Prepare;
 
 use lib '.';
-use Configure;
 use Execute;
 use Platform;
 

@@ -4,6 +4,7 @@
 # TODO: rather one single script, and one CMakeLists, at top level
 
 use lib '../manage';
+use Build;
 use Configure;
 use Execute;
 use Platform;
@@ -27,10 +28,8 @@ my $helpDoc = "Prepare environment, build everything and run tests.
      -c | --clean: clean pyenv and build directory
      -p | --prepare: create build directory, pyenv, and call cmake
 
-     --build-release: build the libraries, in release mode
-     --build-debug: build the libraries, in debug mode
-     --release: build command line tools, in release mode
-     --debug: build command line tools, in debug mode
+     --release: build in release mode
+     --debug: build in debug mode
 ";
 
 Getopt::Long::Configure("bundling");
@@ -41,8 +40,6 @@ GetOptions(
            "build-verbose" => \$buildVerbose,
            "clean|c" => \$clean,
            "prepare|p" => \$prepare,
-           "build-release" => \$buildRelease,
-           "build-debug" => \$buildDebug,
            "release" => \$release,
            "debug" => \$debug
           ) or die $usage;
@@ -52,18 +49,13 @@ if ($help) {
     exit 0;
 }
 
-my $sum = scalar grep {defined($_)} $clean, $prepare, $buildRelease, $buildDebug,
-    $release, $debug;
+my $sum = scalar grep {defined($_)} $clean, $prepare, $release, $debug;
 my $all = ($sum == 0) ? 1 : 0;
 if ($all) {
     $prepare = 1;
-    $buildRelease = 1;
-    $buildDebug = 1;
     $release = 1;
     $debug = 1;
 }
-$buildRelease = ($buildRelease || $release);
-$buildDebug = ($buildDebug || $debug);
 
 if ($buildVerbose) {
     $ninja .= " -v";
@@ -80,14 +72,8 @@ if ($clean) {
 if ($prepare) {
     runPrepare();
 }
-if ($buildRelease) {
-    runBuildRelease();
-}
 if ($release) {
     runRelease();
-}
-if ($buildDebug) {
-    runBuildDebug();
 }
 if ($debug) {
     runDebug();
@@ -113,23 +99,8 @@ sub runPrepare {
     prepareBuild($currentDirectory, $verbose);
 }
 
-sub runBuildRelease {
-    if (platformIsLinux()) {
-        executeTestCommand("$pyenv; cd $releaseBuildDirectory; $ninja", "build in Release mode", $verbose);
-    } else {
-        executeTestCommand("$pyenv; cd $releaseBuildDirectory; cmake --build . --config Release", "build in Release mode", $verbose);
-    }
-}
-
-sub runBuildDebug {
-    if (platformIsLinux()) {
-        executeTestCommand("$pyenv; cd $debugBuildDirectory; $ninja", "build in Debug mode", $verbose);
-    } else {
-        executeTestCommand("$pyenv; cd $debugBuildDirectory; cmake --build . --config Debug", "build in Debug mode", $verbose);
-    }
-}
-
 sub runRelease {
+    build("Release", $verbose);
     if (platformIsLinux()) {
         executeTestCommand("ln -sf $releaseBuildDirectory/command_line/command_line command_line_release",
             "create link to command_line binary in Release mode", $verbose);
@@ -137,6 +108,7 @@ sub runRelease {
 }
 
 sub runDebug {
+    build("Debug", $verbose);
     if (platformIsLinux()) {
         executeTestCommand("ln -sf $debugBuildDirectory/command_line/command_line command_line_debug",
             "create link to command_line binary in Debug mode", $verbose);
