@@ -1,8 +1,5 @@
 package Platform;
 
-#use File::Basename;
-#use POSIX;
-
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(
@@ -27,7 +24,7 @@ our @EXPORT = qw(
     checkPlatformIsWindows
     platformIsLinux
     platformIsWindows
-    );
+);
 
 $platform = $^O;
 sub platformIsWindows() {

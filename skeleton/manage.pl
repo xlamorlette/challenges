@@ -5,11 +5,9 @@
 
 use lib '../manage';
 use Build;
-use Configure;
 use Execute;
 use Platform;
-use Prepare;
-use Run;
+use Pyenv;
 
 use Getopt::Long;
 use POSIX;

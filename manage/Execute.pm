@@ -10,7 +10,7 @@ our @ISA = qw(Exporter);
 our @EXPORT = qw(
     executeCommandIgnoreReturnCode
     executeTestCommand
-    );
+);
 
 sub executeCommandIgnoreReturnCode {
     # arguments:
