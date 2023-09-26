@@ -56,12 +56,12 @@ sub _runPylint {
     #    - verbose
     my ($pylintRcFile, $pylintReferenceFile, $pythonFiles, $_verbose) = @_;
     $pylintResultFile = "/tmp/pylint_result";
-    executeCommandIgnoreReturnCode("$rm  $pylintResultFile", "clean pylint temporary result file");
+    executeCommandIgnoreReturnCode("$rm $pylintResultFile", "clean pylint temporary result file");
     $pylintCommand = "pylint --rcfile=$pylintRcFile --reports=n --score=no --jobs=0 $pythonFiles";
     executeTestCommand("$pyenv; $pylintCommand 2>/dev/null | grep -v \"^\*\" | sort | tee $pylintResultFile",
         "run pylint", $_verbose, 1, 1);
     executeTestCommand("diff --strip-trailing-cr $pylintReferenceFile $pylintResultFile", "compare pylint result with reference");
-    executeCommandIgnoreReturnCode("$rm  $pylintResultFile", "clean pylint temporary result file");
+    executeCommandIgnoreReturnCode("$rm $pylintResultFile", "clean pylint temporary result file");
 }
 
 1;

@@ -26,7 +26,7 @@ sub _runCppCheck {
     my ($_cmake_folder) = @_;
     my $_verbose = $_[1] || 0;
     executeTestCommand("$pyenv; cmake --build $_cmake_folder --target cppcheck -- ",
-    "C++ code static analysis cppcheck", $_verbose);
+        "C++ code static analysis cppcheck", $_verbose);
 }
 
 sub _runClangFormatDry {
@@ -55,7 +55,7 @@ sub _runClangTidy {
     #    - verbose (default = 0)
     my ($_cmake_folder) = @_;
     my $_verbose = $_[1] || 0;
-   executeTestCommand("cmake --build $_cmake_folder --target clang_tidy",
+    executeTestCommand("cmake --build $_cmake_folder --target clang_tidy",
         "Check C++ code with clang-tidy", $_verbose);
 }
 
