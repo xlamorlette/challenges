@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 # manage.pl
 
-# TODO: rather one single script, and one CMakeLists, at top level
-
 use lib '../manage';
 use Build;
 use Execute;
@@ -18,6 +16,9 @@ my $usage = "usage: $0 [-h]
      -h: help\n";
 
 my $helpDoc = "Prepare environment, build everything and run tests.
+This script must be run from a sub-directory, such as skeleton for example:
+challenges/skeleton > ../manage.pl -v
+
      -h | --help: this help
 
      -q | --quiet: only output errors
