@@ -4,6 +4,8 @@ use lib '.';
 use Execute;
 use Platform;
 
+use File::Basename;
+
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(
@@ -26,6 +28,28 @@ sub build {
         ? $ninja
         : "cmake --build . --config $mode";
     executeTestCommand("$pyenv; cd $buildDirectory; $buildCommand", "build in $mode mode", $_verbose);
+    _linkExecutables("$mode", $_verbose);
+}
+
+sub _linkExecutables {
+    # arguments:
+    #    - mode: Release / Debug
+    #    - verbose (optional)
+    my ($mode) = @_;
+    my $_verbose = $_[1] || 0;
+    return if (! platformIsLinux());
+    my $buildDirectory = getBuildDirectory($mode);
+    my $command = "find $buildDirectory -executable -type f | grep -v CMake";
+    my $commandHandler;
+    open $commandHandler, "$command 2>&1 |";
+    while (<$commandHandler>) {
+        my $executablePath = $_;
+        chomp($executablePath);
+        $filename = basename($executablePath);
+        executeTestCommand("ln -sf $executablePath ${filename}_${mode}",
+            "create link to filename binary in $mode mode", $_verbose);
+    }
+    close $commandHandler;
 }
 
 sub cleanBuild {
@@ -48,6 +72,15 @@ sub cleanMiscArtefacts {
     } else {
         executeCommandIgnoreReturnCode("$rm CMakeUserPresets.json", "clean CMakeUserPresets", $_verbose);
     }
+    _cleanLinks($_verbose);
+}
+
+sub _cleanLinks {
+    # argument:
+    #    - verbose (optional)
+    my $_verbose = $_[0] || 0;
+    return if (! platformIsLinux());
+    executeCommandIgnoreReturnCode("find . -maxdepth 1 -type l | xargs rm -f", "remove links", $_verbose);
 }
 
 sub conanInstall {

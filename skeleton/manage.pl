@@ -65,11 +65,13 @@ my $pythonRequirementsFile = "$currentDirectory/../requirements.txt";
 
 
 if ($clean) {
-    runClean();
+    cleanMiscArtefacts($verbose);
+    cleanBuild($verbose);
+    cleanPyenv($verbose);
 }
 
 if ($prepare) {
-    #preparePyenv($pythonRequirementsFile, $verbose);
+    preparePyenv($pythonRequirementsFile, $verbose);
     conanInstall($verbose);
     runCMake($currentDirectory, $verbose);
 }
@@ -79,12 +81,12 @@ if ($cmake) {
 }
 
 if ($release) {
-    runBuildRelease();
+    build("Release", $verbose);
     runTest("Release");
 }
 
 if ($debug) {
-    runBuildDebug();
+    build("Debug", $verbose);
     runTest("Debug");
 }
 
@@ -92,38 +94,11 @@ print "${okColour}Done${normalText}\n" if (! $quiet);
 exit 0;
 
 
-sub runClean {
-    if (platformIsLinux()) {
-        foreach $link ("command_line_release", "command_line_debug") {
-            executeCommandIgnoreReturnCode("$rm $link", "clean Linux binary link", $verbose);
-        }
-    }
-    cleanMiscArtefacts($verbose);
-    cleanBuild($verbose);
-    #cleanPyenv($verbose);
-}
-
-sub runBuildRelease {
-    build("Release", $verbose);
-    if (platformIsLinux()) {
-        executeTestCommand("ln -sf $releaseBuildDirectory/command_line/command_line command_line_release",
-            "create link to command_line binary in Release mode", $verbose);
-    }
-}
-
-sub runBuildDebug {
-    build("Debug", $verbose);
-    if (platformIsLinux()) {
-        executeTestCommand("ln -sf $debugBuildDirectory/command_line/command_line command_line_debug",
-            "create link to command_line binary in Debug mode", $verbose);
-    }
-}
-
 sub runTest {
     # arguments:
     #    - mode: Release / Debug
     my ($mode) = @_;
     my $buildDirectory = getBuildDirectory($mode);
     my $testSubDirectory = platformIsLinux() ? "lib/test" : "lib/test/$mode";
-    executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_test", "run tests in $mode mode", $verbose);
+    executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_lib_test", "run tests in $mode mode", $verbose);
 }
