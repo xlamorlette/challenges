@@ -71,10 +71,12 @@ if ($prepare) {
     runPrepare();
 }
 if ($release) {
-    runRelease();
+    runBuildRelease();
+    runTest("Release");
 }
 if ($debug) {
-    runDebug();
+    runBuildDebug();
+    runTest("Debug");
 }
 
 print "${okColour}Done${normalText}\n" if (! $quiet);
@@ -97,7 +99,7 @@ sub runPrepare {
     prepareBuild($currentDirectory, $verbose);
 }
 
-sub runRelease {
+sub runBuildRelease {
     build("Release", $verbose);
     if (platformIsLinux()) {
         executeTestCommand("ln -sf $releaseBuildDirectory/command_line/command_line command_line_release",
@@ -105,10 +107,19 @@ sub runRelease {
     }
 }
 
-sub runDebug {
+sub runBuildDebug {
     build("Debug", $verbose);
     if (platformIsLinux()) {
         executeTestCommand("ln -sf $debugBuildDirectory/command_line/command_line command_line_debug",
             "create link to command_line binary in Debug mode", $verbose);
     }
+}
+
+sub runTest {
+    # arguments:
+    #    - mode: Release / Debug
+    my ($mode) = @_;
+    my $buildDirectory = $mode eq "Release" ? $releaseBuildDirectory : $debugBuildDirectory;
+    my $testSubDirectory = platformIsLinux() ? "test" : "test/$mode";
+    executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_test", "run tests in $mode mode", $verbose);
 }

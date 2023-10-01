@@ -4,13 +4,12 @@
 
 class A {
 public:
+    int value;
+
     A(int value);
 
     friend std::ostream & operator<<(std::ostream &,
             const A &);
-
-private:
-    int value;
 };
 
 std::ostream & operator<<(std::ostream &,

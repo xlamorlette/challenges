@@ -12,6 +12,4 @@ target_link_libraries(command_line
         skeleton_lib
 )
 
-target_include_directories(command_line PRIVATE ..)
-
 target_compile_options(command_line PRIVATE ${COMPILE_OPTIONS})

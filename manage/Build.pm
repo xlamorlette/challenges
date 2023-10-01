@@ -43,8 +43,9 @@ sub cleanMiscArtefacts {
         executeCommandIgnoreReturnCode("find . -name __pycache__ | xargs rm -rf", "clean Python caches", $_verbose);
         executeCommandIgnoreReturnCode("find . -name *.egg-info | xargs rm -rf", "clean Python eggs", $_verbose);
         executeCommandIgnoreReturnCode("find . -name .pytest_cache | xargs rm -rf", "clean Pytest cache", $_verbose);
+    } else {
+        executeCommandIgnoreReturnCode("$rm CMakeUserPresets.json", "clean CMakeUserPresets", $_verbose);
     }
-    executeCommandIgnoreReturnCode("$rm CMakeUserPresets.json", "clean CMakeUserPresets", $_verbose);
 }
 
 sub prepareBuild {

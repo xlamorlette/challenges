@@ -11,3 +11,5 @@ command_line_release
 
 # CMake generated file
 CMakeUserPresets.json
+
+.vscode/tasks.json
