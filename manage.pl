@@ -31,6 +31,7 @@ challenges/skeleton > ../manage.pl -v
 
      --release: build in release mode
      --debug: build in debug mode
+     --tests: optional tests names to run the unit tests
 ";
 
 Getopt::Long::Configure("bundling");
@@ -43,7 +44,8 @@ GetOptions(
            "prepare|p" => \$prepare,
            "cmake|m" => \$cmake,
            "release" => \$release,
-           "debug" => \$debug
+           "debug" => \$debug,
+           "tests=s" => \$tests
           ) or die $usage;
 if ($help) {
     print "$usage\n";
@@ -84,12 +86,12 @@ if ($cmake) {
 
 if ($release) {
     build("Release", $verbose);
-    runTest("Release", $verbose);
+    runTest("Release", $tests, $verbose);
 }
 
 if ($debug) {
     build("Debug", $verbose);
-    runTest("Debug", $verbose);
+    runTest("Debug", $tests, $verbose);
 }
 
 print "${okColour}Done${normalText}\n" if (! $quiet);

@@ -16,9 +16,11 @@ our @EXPORT = qw(
 sub runTest {
     # arguments:
     #    - mode: Release / Debug
+    #    - tests: optional
     #    - verbose (optional)
     my ($mode) = @_;
-    my $_verbose = $_[1] || 0;
+    my $_tests = $_[1] || "";
+    my $_verbose = $_[2] || 0;
     my $buildDirectory = getBuildDirectory($mode);
     my $commandHandler;
     if (platformIsLinux()) {
@@ -35,7 +37,7 @@ sub runTest {
             $executablePath = "$buildDirectory/$executablePath";
         }
         my $filename = basename($executablePath);
-        executeTestCommand("./$executablePath", "run $filename tests in $mode mode", $_verbose);
+        executeTestCommand("./$executablePath $_tests --allow-running-no-tests", "run $_tests from $filename in $mode mode", $_verbose);
     }
     close $commandHandler;
 }
