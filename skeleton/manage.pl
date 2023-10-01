@@ -24,7 +24,8 @@ my $helpDoc = "Prepare environment, build everything and run tests.
      --build-verbose: build in verbose mode
 
      -c | --clean: clean pyenv and build directory
-     -p | --prepare: create build directory, pyenv, and call cmake
+     -p | --prepare: create pyenv, run Conan and CMake
+     -m | --cmake: run CMake
 
      --release: build in release mode
      --debug: build in debug mode
@@ -38,6 +39,7 @@ GetOptions(
            "build-verbose" => \$buildVerbose,
            "clean|c" => \$clean,
            "prepare|p" => \$prepare,
+           "cmake|m" => \$cmake,
            "release" => \$release,
            "debug" => \$debug
           ) or die $usage;
@@ -46,8 +48,7 @@ if ($help) {
     print "$helpDoc\n";
     exit 0;
 }
-
-my $sum = scalar grep {defined($_)} $clean, $prepare, $release, $debug;
+my $sum = scalar grep {defined($_)} $clean, $prepare, $cmake, $release, $debug;
 my $all = ($sum == 0) ? 1 : 0;
 if ($all) {
     $prepare = 1;
@@ -58,22 +59,30 @@ if ($all) {
 if ($buildVerbose) {
     $ninja .= " -v";
 }
-
 my $currentDirectory = getcwd;
-
 configurePyenvUsage($currentDirectory, $verbose);
 my $pythonRequirementsFile = "$currentDirectory/../requirements.txt";
+
 
 if ($clean) {
     runClean();
 }
+
 if ($prepare) {
-    runPrepare();
+    #preparePyenv($pythonRequirementsFile, $verbose);
+    conanInstall($verbose);
+    runCMake($currentDirectory, $verbose);
 }
+
+if ($cmake) {
+    runCMake($currentDirectory, $verbose);
+}
+
 if ($release) {
     runBuildRelease();
     runTest("Release");
 }
+
 if ($debug) {
     runBuildDebug();
     runTest("Debug");
@@ -91,12 +100,7 @@ sub runClean {
     }
     cleanMiscArtefacts($verbose);
     cleanBuild($verbose);
-    cleanPyenv($verbose);
-}
-
-sub runPrepare {
-    preparePyenv($pythonRequirementsFile, $verbose);
-    prepareBuild($currentDirectory, $verbose);
+    #cleanPyenv($verbose);
 }
 
 sub runBuildRelease {
@@ -119,7 +123,7 @@ sub runTest {
     # arguments:
     #    - mode: Release / Debug
     my ($mode) = @_;
-    my $buildDirectory = $mode eq "Release" ? $releaseBuildDirectory : $debugBuildDirectory;
+    my $buildDirectory = getBuildDirectory($mode);
     my $testSubDirectory = platformIsLinux() ? "lib/test" : "lib/test/$mode";
     executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_test", "run tests in $mode mode", $verbose);
 }

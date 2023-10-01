@@ -10,7 +10,9 @@ our @EXPORT = qw(
     build
     cleanBuild
     cleanMiscArtefacts
-    prepareBuild
+    conanInstall
+    getBuildDirectory
+    runCMake
 );
 
 sub build {
@@ -19,7 +21,7 @@ sub build {
     #    - verbose (optional)
     my ($mode) = @_;
     my $_verbose = $_[1] || 0;
-    my $buildDirectory = $mode eq "Release" ? $releaseBuildDirectory : $debugBuildDirectory;
+    my $buildDirectory = getBuildDirectory($mode);
     my $buildCommand = platformIsLinux()
         ? $ninja
         : "cmake --build . --config $mode";
@@ -48,19 +50,30 @@ sub cleanMiscArtefacts {
     }
 }
 
-sub prepareBuild {
+sub conanInstall {
+    # arguments:
+    #    - verbose (optional)
+    my $_verbose = $_[0] || 0;
+    executeTestCommand("$pyenv; conan profile detect --force", "detect Conan profile", $_verbose);
+    executeTestCommand("$pyenv; conan install . -s build_type=Release --output-folder=$releaseBuildDirectory --build=missing",
+        "install Conan packages in Release mode", $_verbose);
+    executeTestCommand("$pyenv; conan install . -s build_type=Debug --output-folder=$debugBuildDirectory --build=missing",
+        "install Conan packages in Debug mode", $_verbose);
+}
+
+sub getBuildDirectory {
+    # arguments:
+    #    - mode: Release / Debug
+    my ($mode) = @_;
+    return $mode eq "Release" ? $releaseBuildDirectory : $debugBuildDirectory;
+}
+
+sub runCMake {
     # arguments:
     #    - baseDirectory
     #    - verbose (optional)
     my ($baseDirectory) = @_;
     my $_verbose = $_[1] || 0;
-    executeTestCommand("$pyenv; conan profile detect --force", "detect Conan profile", $_verbose);
-    executeCommandIgnoreReturnCode("$mkdir $releaseBuildDirectory", "create Release build directory", $_verbose);
-    executeCommandIgnoreReturnCode("$mkdir $debugBuildDirectory", "create Debug build directory", $_verbose);
-    executeTestCommand("$pyenv; conan install . -s build_type=Release --output-folder=$releaseBuildDirectory --build=missing",
-        "install Conan packages in Release mode", $_verbose);
-    executeTestCommand("$pyenv; conan install . -s build_type=Debug --output-folder=$debugBuildDirectory --build=missing",
-        "install Conan packages in Debug mode", $_verbose);
     my $cmakeOptions = platformIsLinux()
         ? "-G Ninja"
         : "-DCMAKE_TOOLCHAIN_FILE='conan_toolchain.cmake'";
