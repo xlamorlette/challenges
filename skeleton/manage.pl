@@ -120,6 +120,6 @@ sub runTest {
     #    - mode: Release / Debug
     my ($mode) = @_;
     my $buildDirectory = $mode eq "Release" ? $releaseBuildDirectory : $debugBuildDirectory;
-    my $testSubDirectory = platformIsLinux() ? "test" : "test/$mode";
+    my $testSubDirectory = platformIsLinux() ? "lib/test" : "lib/test/$mode";
     executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_test", "run tests in $mode mode", $verbose);
 }
