@@ -45,7 +45,7 @@ sub _linkExecutables {
     while (<$commandHandler>) {
         my $executablePath = $_;
         chomp($executablePath);
-        $filename = basename($executablePath);
+        my $filename = basename($executablePath);
         executeTestCommand("ln -sf $executablePath ${filename}_${mode}",
             "create link to filename binary in $mode mode", $_verbose);
     }

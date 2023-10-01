@@ -8,6 +8,7 @@ use Build;
 use Execute;
 use Platform;
 use Pyenv;
+use Test;
 
 use Getopt::Long;
 use POSIX;
@@ -82,23 +83,13 @@ if ($cmake) {
 
 if ($release) {
     build("Release", $verbose);
-    runTest("Release");
+    runTest("Release", $verbose);
 }
 
 if ($debug) {
     build("Debug", $verbose);
-    runTest("Debug");
+    runTest("Debug", $verbose);
 }
 
 print "${okColour}Done${normalText}\n" if (! $quiet);
 exit 0;
-
-
-sub runTest {
-    # arguments:
-    #    - mode: Release / Debug
-    my ($mode) = @_;
-    my $buildDirectory = getBuildDirectory($mode);
-    my $testSubDirectory = platformIsLinux() ? "lib/test" : "lib/test/$mode";
-    executeTestCommand("cd $buildDirectory; cd $testSubDirectory; ./skeleton_lib_test", "run tests in $mode mode", $verbose);
-}
