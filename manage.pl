@@ -3,6 +3,7 @@
 
 use lib '../manage';
 use Build;
+use CppStatic;
 use Execute;
 use Platform;
 use Pyenv;
@@ -29,8 +30,9 @@ challenges/skeleton > ../manage.pl -v
      -p | --prepare: create pyenv, run Conan and CMake
      -m | --cmake: run CMake
 
-     --release: build in release mode
-     --debug: build in debug mode
+     --release: build and run tests in Release mode
+     --debug: build and run tests in Debug mode
+     --check-cpp: run C++ code static analysis
      --tests: optional tests names to run the unit tests
 ";
 
@@ -45,6 +47,7 @@ GetOptions(
            "cmake|m" => \$cmake,
            "release" => \$release,
            "debug" => \$debug,
+           "check-cpp" => \$checkCpp,
            "tests=s" => \$tests
           ) or die $usage;
 if ($help) {
@@ -52,12 +55,15 @@ if ($help) {
     print "$helpDoc\n";
     exit 0;
 }
-my $sum = scalar grep {defined($_)} $clean, $prepare, $cmake, $release, $debug;
+my $sum = scalar grep {defined($_)} $clean, $prepare, $cmake, $release, $debug, $checkCpp;
 my $all = ($sum == 0) ? 1 : 0;
 if ($all) {
-    $prepare = 1;
+    $cmake = 1;
     $release = 1;
     $debug = 1;
+    if (platformIsLinux()) {
+        $checkCpp = 1;
+    }
 }
 
 if ($buildVerbose) {
@@ -92,6 +98,10 @@ if ($release) {
 if ($debug) {
     build("Debug", $verbose);
     runTest("Debug", $tests, $verbose);
+}
+
+if ($checkCpp) {
+    checkCpp($verbose);
 }
 
 print "${okColour}Done${normalText}\n" if (! $quiet);

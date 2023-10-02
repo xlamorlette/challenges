@@ -80,7 +80,7 @@ sub _cleanLinks {
     #    - verbose (optional)
     my $_verbose = $_[0] || 0;
     return if (! platformIsLinux());
-    executeCommandIgnoreReturnCode("find . -maxdepth 1 -type l | xargs rm -f", "remove links", $_verbose);
+    executeCommandIgnoreReturnCode("find . -maxdepth 1 -type l | grep -v manage.pl | xargs rm -f", "remove links", $_verbose);
 }
 
 sub conanInstall {

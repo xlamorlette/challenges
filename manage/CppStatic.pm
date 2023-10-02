@@ -9,53 +9,52 @@ use POSIX;
 use Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(
-    runAllCheckCpp
-    runFormatCpp
+    checkCpp
+    formatCpp
 );
 
-sub runAllCheckCpp {
-    _runCppCheck($releaseBuildDirectory, $verbose);
-    _runClangFormatDry($releaseBuildDirectory, $verbose);
-    _runClangTidy($releaseBuildDirectory, $verbose);
+sub checkCpp {
+    # arguments:
+    #    - verbose (defaut = 0)
+    my $_verbose = $_[0] || 0;
+    _runCppCheck($_verbose);
+    #_runClangFormatDry($_verbose);
+    #_runClangTidy($_verbose);
 }
 
 sub _runCppCheck {
     # arguments:
-    #    - cmake build folder
     #    - verbose (defaut = 0)
-    my ($_cmake_folder) = @_;
-    my $_verbose = $_[1] || 0;
-    executeTestCommand("$pyenv; cmake --build $_cmake_folder --target cppcheck -- ",
-        "C++ code static analysis cppcheck", $_verbose);
+    my $_verbose = $_[0] || 0;
+    return if platformIsWindows();
+    my $conanRun = ". $releaseBuildDirectory/conanrun.sh";
+    my $cppcheckOptions = "--quiet --enable=all --inline-suppr --disable=missingInclude --error-exitcode=2";
+    my $cppcheckCommand = "cppcheck --project=$releaseBuildDirectory/compile_commands.json $cppcheckOptions";
+    executeTestCommand("$conanRun; $cppcheckCommand", "run CppCheck", $_verbose);
 }
 
 sub _runClangFormatDry {
     # arguments:
-    #    - CMake build folder
     #    - verbose (default = 0)
     my ($_cmake_folder) = @_;
     my $_verbose = $_[1] || 0;
-    executeTestCommand("$pyenv; cmake --build $_cmake_folder --target clang_format_dry_run",
+    executeTestCommand("$pyenv; cmake --build $releaseBuildDirectory --target clang_format_dry_run",
         "Check if C++ code is formatted clang_tidy", $_verbose);
 }
 
-sub runFormatCpp {
+sub formatCpp {
     # arguments:
-    #    - CMake build folder
     #    - verbose (default = 0)
-    my ($_cmake_folder) = @_;
-    my $_verbose = $_[1] || 0;
-    executeTestCommand("$pyenv; cmake --build $_cmake_folder --target clang_format_inplace_edit",
+    my $_verbose = $_[0] || 0;
+    executeTestCommand("$pyenv; cmake --build $releaseBuildDirectory --target clang_format_inplace_edit",
         "Format C++ code clang_format", $_verbose);
 }
 
 sub _runClangTidy {
     # arguments:
-    #    - CMake build folder
     #    - verbose (default = 0)
-    my ($_cmake_folder) = @_;
     my $_verbose = $_[1] || 0;
-    executeTestCommand("cmake --build $_cmake_folder --target clang_tidy",
+    executeTestCommand("cmake --build $releaseBuildDirectory --target clang_tidy",
         "Check C++ code with clang-tidy", $_verbose);
 }
 

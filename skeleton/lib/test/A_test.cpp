@@ -10,5 +10,5 @@ TEST_CASE("A constructor") {
 TEST_CASE("A value direct assignement") {
     A a {1};
     a.value = 2;
-    CHECK(a.value == 2);
+    CHECK(a.value == 2);  // cppcheck-suppress knownConditionTrueFalse
 }

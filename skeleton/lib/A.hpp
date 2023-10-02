@@ -6,7 +6,7 @@ class A {
 public:
     int value;
 
-    A(int value);
+    explicit A(int value);
 
     friend std::ostream & operator<<(std::ostream &,
             const A &);

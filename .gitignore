@@ -13,3 +13,6 @@ build
 CMakeUserPresets.json
 
 .vscode/tasks.json
+
+# links to root script
+*/manage.pl

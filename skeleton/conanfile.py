@@ -7,6 +7,8 @@ class SkeletonConan(ConanFile):
     generators = "CMakeDeps"
 
     def requirements(self):
+        if self.settings.os == "Linux":
+            self.requires("cppcheck/2.12.1")
         self.requires("catch2/3.4.0")
         self.requires("zlib/1.2.11")
 

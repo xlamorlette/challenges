@@ -18,14 +18,14 @@ int main(int /*argc*/,
     defstream.zfree = Z_NULL;
     defstream.opaque = Z_NULL;
     defstream.avail_in = (uInt) strlen(buffer_in);
-    defstream.next_in = (Bytef *) buffer_in;
+    defstream.next_in = (Bytef *) buffer_in;  // cppcheck-suppress cstyleCast
     defstream.avail_out = (uInt) sizeof(buffer_out);
-    defstream.next_out = (Bytef *) buffer_out;
+    defstream.next_out = (Bytef *) buffer_out;  // cppcheck-suppress cstyleCast
     deflateInit(&defstream, Z_BEST_COMPRESSION);
     deflate(&defstream, Z_FINISH);
     deflateEnd(&defstream);
-    printf("Uncompressed size is: %lu\n", strlen(buffer_in));
-    printf("Compressed size is: %lu\n", strlen(buffer_out));
+    printf("Uncompressed size is: %lu\n", strlen(buffer_in));  // cppcheck-suppress invalidPrintfArgType_uint
+    printf("Compressed size is: %lu\n", strlen(buffer_out));   // cppcheck-suppress invalidPrintfArgType_uint
     printf("ZLIB VERSION: %s\n", zlibVersion());
 
     A a {12};
