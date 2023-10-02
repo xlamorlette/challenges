@@ -9,9 +9,10 @@ use Platform;
 use Pyenv;
 use Test;
 
-use Getopt::Long;
-use POSIX;
 use Cwd;
+use File::Basename;
+use Getopt::Long;
+#use POSIX;
 
 my $usage = "usage: $0 [-h]
      -h: help\n";
@@ -69,9 +70,10 @@ if ($all) {
 if ($buildVerbose) {
     $ninja .= " -v";
 }
+my $rootDirectory = dirname(Cwd::abs_path($0));
+configurePyenvUsage($rootDirectory, $verbose);
+my $pythonRequirementsFile = "$rootDirectory/requirements.txt";
 my $currentDirectory = getcwd;
-configurePyenvUsage($currentDirectory, $verbose);
-my $pythonRequirementsFile = "$currentDirectory/../requirements.txt";
 
 
 if ($clean) {
