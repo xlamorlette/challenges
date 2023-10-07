@@ -1,6 +1,8 @@
 set(CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -54,10 +56,13 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         -Wzero-as-null-pointer-constant
 
         -Wno-unused-function
+
+        $<$<CONFIG:Debug>:-D_GLIBCXX_DEBUG>
     )
+
     set(PLATFORM_DIR Linux/x64/g++-${CMAKE_CXX_COMPILER_VERSION})
 
-elseif(MSVC)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_definitions(
         # Preventing definition of the 'min' & 'max' macros
         # See: https://stackoverflow.com/questions/5004858/why-is-stdmin-failing-when-windows-h-is-included
