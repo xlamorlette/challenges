@@ -58,16 +58,13 @@ public:
         }
     }
 
-private:
+protected:
     Value default_value;
     std::map<Key, Value> map;
 
     template <typename K, typename V>
     friend std::ostream & operator<<(std::ostream &,
             const Interval_map<Key, Value> &);
-
-    template <typename K, typename V>
-    friend class Interval_map_test;
 };
 
 template <typename Key, typename Value>
