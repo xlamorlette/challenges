@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <map>
 
@@ -30,48 +31,30 @@ public:
         }
         const auto it_key_inf = map.lower_bound(key_inf);
         const auto it_key_sup = map.upper_bound(key_sup);
-        if (it_key_inf == map.cbegin()) {
-            if (it_key_sup == map.cbegin()) {
-                if (! (value == default_value)) {
-                    map.insert(it_key_sup, std::make_pair(key_sup, default_value));
-                }
-            } else {
-                // here, it_key_sup != begin
-                const Value & next_value = std::prev(it_key_sup)->second;
-                if (! (next_value == value)) {
-                    map.insert(it_key_sup, std::make_pair(key_sup, next_value));
-                    //  here, we can't have it_key_inf == it_key_sup
-                    map.erase(it_key_inf, std::prev(it_key_sup));
-                } else {
-                    map.erase(it_key_inf, it_key_sup);
-                }
-            }
+        std::reference_wrapper<const Value> previous_value = std::cref(default_value);
+        if (it_key_inf != map.cbegin()) {
+            previous_value = std::cref(std::prev(it_key_inf)->second);
+        }
+        if (((it_key_inf == map.cbegin())
+                    && (it_key_sup == map.cbegin()))
+                || (it_key_sup == map.cend())) {
+            map.erase(it_key_inf, it_key_sup);
             if (! (value == default_value)) {
-                map.insert(it_key_sup, std::make_pair(key_inf, value));
+                map.insert(it_key_sup, std::make_pair(key_sup, default_value));
             }
         } else {
-            // here, it_key_inf != begin
-            const Value & previous_value = std::prev(it_key_inf)->second;
-            if (it_key_sup == map.cend()) {
-                map.erase(it_key_inf, it_key_sup);
-                if (! (value == default_value)) {
-                    map.insert(it_key_sup, std::make_pair(key_sup, default_value));
+            const Value & next_value = std::prev(it_key_sup)->second;
+            if (! (value == next_value)) {
+                map.insert(it_key_sup, std::make_pair(key_sup, next_value));
+                if (it_key_sup != it_key_inf) {
+                    map.erase(it_key_inf, std::prev(it_key_sup));
                 }
             } else {
-                // since it_key_inf != begin, it_key_sup != begin
-                const Value & next_value = std::prev(it_key_sup)->second;
-                if (! (next_value == value)) {
-                    map.insert(it_key_sup, std::make_pair(key_sup, next_value));
-                    if (it_key_inf != it_key_sup) {
-                        map.erase(it_key_inf, std::prev(it_key_sup));
-                    }
-                } else {
-                    map.erase(it_key_inf, it_key_sup);
-                }
+                map.erase(it_key_inf, it_key_sup);
             }
-            if (! (value == previous_value)) {
-                map.insert(it_key_sup, std::make_pair(key_inf, value));
-            }
+        }
+        if (! (value == previous_value)) {
+            map.insert(it_key_sup, std::make_pair(key_inf, value));
         }
     }
 
