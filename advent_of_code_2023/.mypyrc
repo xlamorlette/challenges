@@ -1,0 +1,10 @@
+[mypy]
+# coma-separated list of files where mypy searches for .pyi stubs
+mypy_path =
+
+files = **/*.py
+
+namespace_packages = True
+show_error_codes = True
+warn_unused_ignores = True
+disable_error_code = annotation-unchecked

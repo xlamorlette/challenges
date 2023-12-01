@@ -2,6 +2,10 @@
 .pyenv-linux
 .pyenv-windows
 
+.mypy_cache
+.pytest_cache
+__pycache__
+
 # Build folders
 build
 
@@ -12,7 +16,14 @@ build
 # CMake generated file
 CMakeUserPresets.json
 
+# Visual Studio Code
 .vscode/tasks.json
 
+# Jetbrains IDEs
+/.idea
+
 # links to root script
-*/manage.pl
+interval_map/manage.pl
+skeleton/manage.pl
+
+input.txt
