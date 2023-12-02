@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, Final, List
 
 
 class Color(Enum):
@@ -8,7 +8,7 @@ class Color(Enum):
     BLUE = 2
 
 
-ALL_COLORS: List[Color] = [Color.RED, Color.GREEN, Color.BLUE]
+ALL_COLORS: Final[List[Color]] = [Color.RED, Color.GREEN, Color.BLUE]
 
 COLOR_PER_STRING: Dict[str, Color] = {
     "red": Color.RED,
@@ -20,7 +20,7 @@ COLOR_PER_STRING: Dict[str, Color] = {
 CubesCombination = Dict[Color, int]
 
 
-NB_CUBES_PER_COLOR_IN_BAG: CubesCombination = {
+NB_CUBES_PER_COLOR_IN_BAG: Final[CubesCombination] = {
     Color.RED: 12,
     Color.GREEN: 13,
     Color.BLUE: 14
@@ -75,3 +75,23 @@ def compute_possible_games_ids_sum(lines: List[str]) -> int:
         if is_game_possible(game):
             possible_games_ids_sum += game.id
     return possible_games_ids_sum
+
+
+def get_minimum_set(game: Game) -> CubesCombination:
+    minimum_set: CubesCombination = dict((color, 0) for color in ALL_COLORS)
+    for draw in game.draws:
+        for color, nb_cubes in draw.items():
+            minimum_set[color] = max(minimum_set[color], nb_cubes)
+    return minimum_set
+
+
+def compute_power_of_minimum_set(game: Game) -> int:
+    minimum_set: CubesCombination = get_minimum_set(game)
+    power: int = 1
+    for _color, nb_cubes in minimum_set.items():
+        power *= nb_cubes
+    return power
+
+
+def compute_sum_of_power_of_minimum_set(lines: List[str]) -> int:
+    return sum(compute_power_of_minimum_set(Game(line)) for line in lines)
