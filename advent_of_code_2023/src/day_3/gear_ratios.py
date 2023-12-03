@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from typing import List
 
@@ -27,9 +28,6 @@ class Schematic:
 
     def get_part_numbers_ids(self) -> List[int]:
         located_numbers_list = self.get_numbers()
-        # for number in located_numbers_list:
-        #     if not self.is_part(number):
-        #         print(f"{number}: {self.is_part(number)}")
         return [located_number.number for located_number in located_numbers_list if self.is_part(located_number)]
 
     def get_numbers(self) -> List[LocatedNumber]:
@@ -68,8 +66,46 @@ class Schematic:
     def is_symbol(character: str) -> bool:
         return (not character.isdigit()) and (character != ".")
 
+    @staticmethod
+    def is_gear_symbol(character: str) -> bool:
+        return character == "*"
+
+    def get_gear_ratios(self) -> List[int]:
+        gear_ratios_list = []
+        numbers_list = self.get_numbers()
+        for row in range(self.nb_rows):
+            for column in range(self.nb_columns):
+                if self.is_gear_symbol(self.row_strings[row][column]):
+                    part_numbers = self.get_adjacent_part_numbers(Position(row=row, column=column), numbers_list)
+                    if len(part_numbers) == 2:
+                        gear_ratio = math.prod(part_numbers)
+                        gear_ratios_list.append(gear_ratio)
+        return gear_ratios_list
+
+    def get_adjacent_part_numbers(self,
+                                  position: Position,
+                                  numbers_list: List[LocatedNumber]) -> List[int]:
+        return [number.number for number in numbers_list if self.is_adjacent(position, number)]
+
+    @staticmethod
+    def is_adjacent(position: Position,
+                    number: LocatedNumber) -> bool:
+        number_length = len(str(number.number))
+        min_row = number.position.row - 1
+        max_row = number.position.row + 1
+        min_column = number.position.column - 1
+        max_column = number.position.column + number_length
+        return min_row <= position.row <= max_row \
+            and min_column <= position.column <= max_column
+
 
 def compute_sum_of_part_numbers(schematic_lines: List[str]) -> int:
     schematic = Schematic(schematic_lines)
     part_numbers_ids = schematic.get_part_numbers_ids()
     return sum(part_numbers_ids)
+
+
+def compute_sum_of_gear_ratios(schematic_lines: List[str]) -> int:
+    schematic = Schematic(schematic_lines)
+    gear_ratios = schematic.get_gear_ratios()
+    return sum(gear_ratios)
