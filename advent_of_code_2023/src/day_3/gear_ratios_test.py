@@ -1,6 +1,6 @@
 from typing import Final, List
 
-from src.day_3.gear_ratios import LocatedNumber, Position, Schematic, compute_sum_of_gear_ratios, \
+from src.day_3.gear_ratios import NumberInGrid, Schematic, compute_sum_of_gear_ratios, \
     compute_sum_of_part_numbers
 
 SCHEMATIC_LINES: Final[List[str]] = [
@@ -60,38 +60,38 @@ def test_schematic_init():
 def test_schematic_get_numbers():
     schematic = Schematic(SCHEMATIC_LINES)
     assert schematic.get_numbers() == [
-        LocatedNumber(467, Position(0, 0)),
-        LocatedNumber(114, Position(0, 5)),
-        LocatedNumber(35, Position(2, 2)),
-        LocatedNumber(633, Position(2, 6)),
-        LocatedNumber(617, Position(4, 0)),
-        LocatedNumber(58, Position(5, 7)),
-        LocatedNumber(592, Position(6, 2)),
-        LocatedNumber(755, Position(7, 6)),
-        LocatedNumber(664, Position(9, 1)),
-        LocatedNumber(598, Position(9, 5))
+        NumberInGrid(467, 0, 0),
+        NumberInGrid(114, 0, 5),
+        NumberInGrid(35, 2, 2),
+        NumberInGrid(633, 2, 6),
+        NumberInGrid(617, 4, 0),
+        NumberInGrid(58, 5, 7),
+        NumberInGrid(592, 6, 2),
+        NumberInGrid(755, 7, 6),
+        NumberInGrid(664, 9, 1),
+        NumberInGrid(598, 9, 5)
     ]
 
 
 def test_schematic_get_numbers_bis():
     schematic = Schematic(SCHEMATIC_LINES_BIS)
     numbers = schematic.get_numbers()
-    assert LocatedNumber(34, Position(1, 10)) in numbers
-    assert LocatedNumber(56, Position(11, 10)) in numbers
+    assert NumberInGrid(34, 1, 10) in numbers
+    assert NumberInGrid(56, 11, 10) in numbers
 
 
 def test_schematic_is_part():
     schematic = Schematic(SCHEMATIC_LINES)
-    assert schematic.is_part(LocatedNumber(467, Position(0, 0)))
-    assert not schematic.is_part(LocatedNumber(114, Position(0, 5)))
-    assert schematic.is_part(LocatedNumber(35, Position(2, 2)))
-    assert schematic.is_part(LocatedNumber(633, Position(2, 6)))
-    assert schematic.is_part(LocatedNumber(617, Position(4, 0)))
-    assert not schematic.is_part(LocatedNumber(58, Position(5, 7)))
-    assert schematic.is_part(LocatedNumber(592, Position(6, 2)))
-    assert schematic.is_part(LocatedNumber(755, Position(7, 6)))
-    assert schematic.is_part(LocatedNumber(664, Position(9, 1)))
-    assert schematic.is_part(LocatedNumber(598, Position(9, 5)))
+    assert schematic.is_part(NumberInGrid(467, 0, 0))
+    assert not schematic.is_part(NumberInGrid(114, 0, 5))
+    assert schematic.is_part(NumberInGrid(35, 2, 2))
+    assert schematic.is_part(NumberInGrid(633, 2, 6))
+    assert schematic.is_part(NumberInGrid(617, 4, 0))
+    assert not schematic.is_part(NumberInGrid(58, 5, 7))
+    assert schematic.is_part(NumberInGrid(592, 6, 2))
+    assert schematic.is_part(NumberInGrid(755, 7, 6))
+    assert schematic.is_part(NumberInGrid(664, 9, 1))
+    assert schematic.is_part(NumberInGrid(598, 9, 5))
 
 
 def test_schematic_is_symbol():
@@ -116,32 +116,32 @@ def test_schematic_get_gear_ratios():
 def test_schematic_get_adjacent_part_numbers():
     schematic = Schematic(SCHEMATIC_LINES)
     numbers = schematic.get_numbers()
-    assert schematic.get_adjacent_part_numbers(Position(1, 3), numbers) == [467, 35]
-    assert schematic.get_adjacent_part_numbers(Position(0, 9), numbers) == []
+    assert schematic.get_adjacent_part_numbers(1, 3, numbers) == [467, 35]
+    assert schematic.get_adjacent_part_numbers(0, 9, numbers) == []
 
 
 def test_schematic_is_adjacent():
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(4, 3)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(4, 4)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(4, 5)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(4, 6)))
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(4, 7)))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 4, 3))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 4, 4))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 4, 5))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 4, 6))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 4, 7))
 
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(5, 3)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(5, 4)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(5, 6)))
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(5, 7)))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 5, 3))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 5, 4))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 5, 6))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 5, 7))
 
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(6, 3)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(6, 4)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(6, 5)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(6, 6)))
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(1, Position(6, 7)))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 6, 3))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 6, 4))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 6, 5))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(1, 6, 6))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(1, 6, 7))
 
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(4, 2)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(4, 3)))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(12, 4, 2))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(12, 4, 3))
 
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(5, 2)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(5, 3)))
-    assert Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(5, 6)))
-    assert not Schematic.is_adjacent(Position(5, 5), LocatedNumber(12, Position(5, 7)))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(12, 5, 2))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(12, 5, 3))
+    assert Schematic.is_adjacent(5, 5, NumberInGrid(12, 5, 6))
+    assert not Schematic.is_adjacent(5, 5, NumberInGrid(12, 5, 7))
