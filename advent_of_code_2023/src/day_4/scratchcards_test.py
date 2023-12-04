@@ -1,6 +1,7 @@
 from typing import Final, List
 
-from src.day_4.scratchcards import compute_card_points, compute_sum_of_points, get_played_numbers, get_winning_numbers
+from src.day_4.scratchcards import compute_card_points, compute_nb_cards, compute_sum_of_points, \
+    get_nb_copies_won_per_card, get_nb_matching_numbers_per_card, get_played_numbers, get_winning_numbers
 
 CARD_LINES: Final[List[str]] = [
     "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53",
@@ -31,3 +32,19 @@ def test_get_winning_numbers():
 
 def test_get_played_numbers():
     assert get_played_numbers(CARD_LINES[0]) == {83, 86, 6, 31, 17, 9, 48, 53}
+
+
+def test_compute_nb_cards():
+    assert compute_nb_cards(CARD_LINES) == 30
+
+
+def test_get_nb_matching_numbers_per_card():
+    assert get_nb_matching_numbers_per_card(CARD_LINES) == [4, 2, 2, 1, 0, 0]
+
+
+def test_get_nb_copies_won_per_card():
+    assert get_nb_copies_won_per_card([0, 0]) == [0, 0]
+    assert get_nb_copies_won_per_card([1, 0]) == [1, 0]
+    assert get_nb_copies_won_per_card([1, 1, 0]) == [2, 1, 0]
+    assert get_nb_copies_won_per_card([2, 2, 1, 0]) == [6, 3, 1, 0]
+    assert get_nb_copies_won_per_card([4, 2, 2, 1, 0, 0]) == [14, 6, 3, 1, 0, 0]
