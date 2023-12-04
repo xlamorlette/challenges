@@ -9,7 +9,7 @@ def compute_card_points(card_str: str) -> int:
     nb_matching_numbers = compute_nb_matching_numbers(card_str)
     if nb_matching_numbers == 0:
         return 0
-    return pow(2, nb_matching_numbers - 1)
+    return 2 ** (nb_matching_numbers - 1)
 
 
 def compute_nb_matching_numbers(card_str):
@@ -30,7 +30,7 @@ def get_played_numbers(card_str: str) -> Set[int]:
 
 
 def get_set_of_numbers(string_to_parse: str) -> Set[int]:
-    return set(int(token) for token in string_to_parse.split(" ") if token != "")
+    return set(map(int, string_to_parse.split()))
 
 
 def compute_nb_cards(card_lines: List[str]) -> int:
@@ -46,6 +46,6 @@ def get_nb_matching_numbers_per_card(card_lines: List[str]) -> List[int]:
 def get_nb_copies_won_per_card(nb_matching_numbers_per_card: List[int]) -> List[int]:
     nb_copies_won_per_card: List[int] = []
     for nb_matching_numbers in reversed(nb_matching_numbers_per_card):
-        nb_copies_won = nb_matching_numbers + sum(nb_copies_won_per_card[:nb_matching_numbers + 1])
+        nb_copies_won = nb_matching_numbers + sum(nb_copies_won_per_card[:nb_matching_numbers])
         nb_copies_won_per_card.insert(0, nb_copies_won)
     return nb_copies_won_per_card
