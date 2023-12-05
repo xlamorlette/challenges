@@ -93,13 +93,14 @@ class SeedAlmanac2(SeedAlmanac):
     def __init__(self,
                  input_lines: List[str]):
         super().__init__(input_lines)
-        self.seed_ranges = [Range(self.seeds[index * 2], self.seeds[index * 2 + 1])
-                            for index in range(int(len(self.seeds) / 2))]
+        self.seed_ranges = [Range(self.seeds[index], self.seeds[index + 1])
+                            for index in range(0, len(self.seeds), 2)]
 
     def compute_lowest_location(self) -> int:
         entity_ranges: List[Range] = self.seed_ranges
         for map_name in MapName:
-            entity_ranges = sum([self.get_destination_ranges(map_name, range_) for range_ in entity_ranges], [])
+            # entity_ranges = sum([self.get_destination_ranges(map_name, range_) for range_ in entity_ranges], [])
+            entity_ranges = self.get_destination_ranges_without_recursion(map_name, entity_ranges)
         return min(range_.start for range_ in entity_ranges)
 
     def get_destination_ranges(self,
@@ -114,3 +115,20 @@ class SeedAlmanac2(SeedAlmanac):
                        + sum([self.get_destination_ranges(map_name, range_)
                               for range_ in entity_range.minus(intersection)], [])
         return [entity_range]
+
+    def get_destination_ranges_without_recursion(self,
+                                                 map_name: MapName,
+                                                 entity_ranges: List[Range]) -> List[Range]:
+        result_ranges: List[Range] = []
+        map_: Map = self.maps[map_name.value]
+        for range_ in entity_ranges:
+            for line in map_:
+                intersection: Optional[Range] = range_.intersection(Range(line.source_range_start, line.range_length))
+                if intersection:
+                    result_ranges.append(Range(line.destination_range_start + intersection.start
+                                               - line.source_range_start, intersection.length))
+                    entity_ranges += range_.minus(intersection)
+                    break
+            else:
+                result_ranges.append(range_)
+        return result_ranges
