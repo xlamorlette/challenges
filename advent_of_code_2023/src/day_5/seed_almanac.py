@@ -1,6 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 
 class MapName(Enum):
@@ -58,3 +59,58 @@ class SeedAlmanac:
             if line.source_range_start <= source_number < line.source_range_start + line.range_length:
                 return line.destination_range_start + source_number - line.source_range_start
         return source_number
+
+
+@dataclass
+class Range:
+    start: int
+    length: int
+
+    def end(self) -> int:
+        return self.start + self.length - 1
+
+    def intersection(self,
+                     other: Range) -> Optional[Range]:
+        lower_bound = max(self.start, other.start)
+        upper_bound = min(self.end(), other.end())
+        if lower_bound > upper_bound:
+            return None
+        return Range(lower_bound, upper_bound - lower_bound + 1)
+
+    def minus(self,
+              other: Range) -> List[Range]:
+        result: List[Range] = []
+        if self.start < other.start:
+            result.append(Range(self.start, other.start - self.start))
+        if self.end() > other.end():
+            result.append(Range(other.end() + 1, self.end() - other.end()))
+        return result
+
+
+class SeedAlmanac2(SeedAlmanac):
+    seed_ranges: List[Range]
+
+    def __init__(self,
+                 input_lines: List[str]):
+        super().__init__(input_lines)
+        self.seed_ranges = [Range(self.seeds[index * 2], self.seeds[index * 2 + 1])
+                            for index in range(int(len(self.seeds) / 2))]
+
+    def compute_lowest_location(self) -> int:
+        entity_ranges: List[Range] = self.seed_ranges
+        for map_name in MapName:
+            entity_ranges = sum([self.get_destination_ranges(map_name, range_) for range_ in entity_ranges], [])
+        return min(range_.start for range_ in entity_ranges)
+
+    def get_destination_ranges(self,
+                               map_name: MapName,
+                               entity_range: Range) -> List[Range]:
+        map_: Map = self.maps[map_name.value]
+        for line in map_:
+            intersection: Optional[Range] = entity_range.intersection(Range(line.source_range_start, line.range_length))
+            if intersection:
+                return [Range(line.destination_range_start + intersection.start - line.source_range_start,
+                              intersection.length)] \
+                       + sum([self.get_destination_ranges(map_name, range_)
+                              for range_ in entity_range.minus(intersection)], [])
+        return [entity_range]

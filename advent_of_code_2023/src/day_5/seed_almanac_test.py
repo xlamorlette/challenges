@@ -1,6 +1,6 @@
 from typing import Final, List
 
-from src.day_5.seed_almanac import MapName, SeedAlmanac, MapLine
+from src.day_5.seed_almanac import MapLine, MapName, SeedAlmanac, SeedAlmanac2, Range
 
 INPUT: Final[str] = """seeds: 79 14 55 13
 
@@ -83,3 +83,34 @@ def test_init():
         [MapLine(0, 69, 1), MapLine(1, 0, 69)],
         [MapLine(60, 56, 37), MapLine(56, 93, 4)]
     ]
+
+
+def test_compute_lowest_location_2():
+    almanac_2 = SeedAlmanac2(INPUT_LINES)
+    assert almanac_2.compute_lowest_location() == 46
+
+
+def test_init_2():
+    almanac_2 = SeedAlmanac2(INPUT_LINES)
+    assert almanac_2.seed_ranges == [Range(79, 14), Range(55, 13)]
+
+
+def test_range_intersection():
+    assert Range(0, 10).intersection(Range(0, 10)) == Range(0, 10)
+    assert Range(0, 10).intersection(Range(10, 10)) is None
+    assert Range(0, 10).intersection(Range(5, 10)) == Range(5, 5)
+    assert Range(0, 10).intersection(Range(5, 2)) == Range(5, 2)
+
+
+def test_range_minus():
+    assert not Range(0, 10).minus(Range(0, 10))
+    assert not Range(0, 10).minus(Range(-10, 100))
+    assert Range(0, 10).minus(Range(0, 5)) == [Range(5, 5)]
+    assert Range(0, 10).minus(Range(5, 5)) == [Range(0, 5)]
+    assert Range(0, 10).minus(Range(5, 2)) == [Range(0, 5), Range(7, 3)]
+
+
+def test_get_destination_ranges():
+    almanac_2 = SeedAlmanac2(INPUT_LINES)
+    assert almanac_2.get_destination_ranges(MapName.SEED_TO_SOIL, Range(0, 10)) == [Range(0, 10)]
+    assert almanac_2.get_destination_ranges(MapName.SEED_TO_SOIL, Range(98, 2)) == [Range(50, 2)]
