@@ -1,11 +1,10 @@
 from typing import Final, List
 
 from src.day_6.boat_race import compute_distance, compute_number_of_ways_to_win, compute_number_of_ways_to_win_2, \
-    compute_number_of_ways_to_win_race
+    compute_number_of_winning_races
 
 INPUT: Final[str] = """Time:      7  15   30
-Distance:  9  40  200
-"""
+Distance:  9  40  200"""
 
 INPUT_LINES: Final[List[str]] = INPUT.split("\n")
 
@@ -15,9 +14,9 @@ def test_compute_number_of_ways_to_win():
 
 
 def test_compute_number_of_ways_to_win_race():
-    assert compute_number_of_ways_to_win_race(7, 9) == 4
-    assert compute_number_of_ways_to_win_race(15, 40) == 8
-    assert compute_number_of_ways_to_win_race(30, 200) == 9
+    assert compute_number_of_winning_races(7, 9) == 4
+    assert compute_number_of_winning_races(15, 40) == 8
+    assert compute_number_of_winning_races(30, 200) == 9
 
 
 def test_compute_distance():

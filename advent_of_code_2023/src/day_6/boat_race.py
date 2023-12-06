@@ -3,19 +3,13 @@ from typing import List
 
 
 def compute_number_of_ways_to_win(lines: List[str]) -> int:
-    times: List[int] = list(map(int, lines[0].split(":")[1].split()))
-    distances: List[int] = list(map(int, lines[1].split(":")[1].split()))
-    return math.prod(compute_number_of_ways_to_win_race(times[race_index], distances[race_index])
-                     for race_index in range(len(times)))
+    times, distances = [list(map(int, line.split(":")[1].split())) for line in lines]
+    return math.prod(compute_number_of_winning_races(time, distance) for time, distance in zip(times, distances))
 
 
-def compute_number_of_ways_to_win_race(race_time: int,
-                                       best_distance: int) -> int:
-    winning_races = 0
-    for button_time in range(race_time):
-        if compute_distance(button_time, race_time) > best_distance:
-            winning_races += 1
-    return winning_races
+def compute_number_of_winning_races(race_time: int,
+                                    best_distance: int) -> int:
+    return sum(compute_distance(button_time, race_time) > best_distance for button_time in range(race_time))
 
 
 def compute_distance(button_time: int,
@@ -26,6 +20,9 @@ def compute_distance(button_time: int,
 
 
 def compute_number_of_ways_to_win_2(lines: List[str]) -> int:
-    time: int = int("".join(lines[0].split(":")[1].split()))
-    distance: int = int("".join(lines[1].split(":")[1].split()))
-    return compute_number_of_ways_to_win_race(time, distance)
+    time, distance = [int("".join(line.split(":")[1].split())) for line in lines]
+    delta: int = time ** 2 - 4 * distance
+    square_root_delta: float = math.sqrt(delta)
+    first_root = (time - square_root_delta) / 2
+    second_root = (time + square_root_delta) / 2
+    return math.floor(second_root) - math.ceil(first_root) + 1
