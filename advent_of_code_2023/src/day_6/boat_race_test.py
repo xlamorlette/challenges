@@ -1,6 +1,7 @@
 from typing import Final, List
 
-from src.day_6.boat_race import compute_distance, compute_number_of_ways_to_win, compute_number_of_ways_to_win_race
+from src.day_6.boat_race import compute_distance, compute_number_of_ways_to_win, compute_number_of_ways_to_win_2, \
+    compute_number_of_ways_to_win_race
 
 INPUT: Final[str] = """Time:      7  15   30
 Distance:  9  40  200
@@ -28,3 +29,7 @@ def test_compute_distance():
     assert compute_distance(5, 7) == 10
     assert compute_distance(6, 7) == 6
     assert compute_distance(7, 7) == 0
+
+
+def test_compute_number_of_ways_to_win_2():
+    assert compute_number_of_ways_to_win_2(INPUT_LINES) == 71503

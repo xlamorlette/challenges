@@ -23,3 +23,9 @@ def compute_distance(button_time: int,
     speed: int = button_time
     moving_time: int = race_time - button_time
     return speed * moving_time
+
+
+def compute_number_of_ways_to_win_2(lines: List[str]) -> int:
+    time: int = int("".join(lines[0].split(":")[1].split()))
+    distance: int = int("".join(lines[1].split(":")[1].split()))
+    return compute_number_of_ways_to_win_race(time, distance)

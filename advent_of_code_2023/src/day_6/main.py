@@ -1,7 +1,7 @@
 import os
 from typing import List
 
-from src.day_6.boat_race import compute_number_of_ways_to_win
+from src.day_6.boat_race import compute_number_of_ways_to_win, compute_number_of_ways_to_win_2
 from src.util.file import read_lines_from_file
 
 
@@ -10,3 +10,4 @@ def main():
     filename = os.path.join(current_path, "input.txt")
     lines: List[str] = read_lines_from_file(filename)
     print(f"Number of ways to win: {compute_number_of_ways_to_win(lines)}")
+    print(f"Number of ways to win 2: {compute_number_of_ways_to_win_2(lines)}")
