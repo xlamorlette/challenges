@@ -1,1 +1,1 @@
-src/day_7/camel_cards.py:38:4: R0911: Too many return statements (15/6) (too-many-return-statements)
+src/day_7/camel_cards.py:38:4: R0911: Too many return statements (8/6) (too-many-return-statements)
