@@ -1,7 +1,7 @@
 from typing import Final, List
 
 from src.day_9.mirage_maintenance import compute_extrapolated_previous_values_sum, compute_extrapolated_values_sum, \
-    extrapolate_previous_value, extrapolate_value, get_differences, not_all_zeros
+    extrapolate_previous_value, extrapolate_value_from_line, get_differences, not_all_zeros
 
 INPUT: Final[str] = """0 3 6 9 12 15
 1 3 6 10 15 21
@@ -15,9 +15,9 @@ def test_compute_extrapolated_values_sum():
 
 
 def test_extrapolate_value():
-    assert extrapolate_value(INPUT_LINES[0]) == 18
-    assert extrapolate_value(INPUT_LINES[1]) == 28
-    assert extrapolate_value(INPUT_LINES[2]) == 68
+    assert extrapolate_value_from_line(INPUT_LINES[0]) == 18
+    assert extrapolate_value_from_line(INPUT_LINES[1]) == 28
+    assert extrapolate_value_from_line(INPUT_LINES[2]) == 68
 
 
 def test_not_all_zeros():
