@@ -25,19 +25,13 @@ class Universe:
     @classmethod
     def get_empty_columns(cls,
                           lines: List[str]) -> List[int]:
-        return [column_index
-                for column_index in range(len(lines[0])) if cls._is_column_empty(lines, column_index)]
-
-    @staticmethod
-    def _is_column_empty(lines: List[str],
-                         column_index: int) -> bool:
-        return all(line[column_index] != "#" for line in lines)
+        return [column_index for column_index, column in enumerate(zip(*lines)) if "#" not in column]
 
     @staticmethod
     def get_galaxies(lines: List[str]) -> List[Position]:
         return [Position(row, column)
-                for row in range(len(lines)) for column in range(len(lines[0]))
-                if lines[row][column] == "#"]
+                for row, line in enumerate(lines) for column, character in enumerate(line)
+                if character == "#"]
 
     def compute_sum_of_galaxy_pair_distance(self) -> int:
         return sum(self._get_distance(galaxy_a, galaxy_b)
