@@ -10,3 +10,4 @@ def main():
     filename = os.path.join(current_path, "input.txt")
     lines: List[str] = read_lines_from_file(filename)
     print(f"Sum of pair distances: {compute_sum_of_pair_distances(lines)}")
+    print(f"Sum of pair distances with 1 million expansion factor: {compute_sum_of_pair_distances(lines, 1000000)}")
