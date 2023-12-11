@@ -1,24 +1,7 @@
-from __future__ import annotations
-from dataclasses import dataclass
 import itertools
 from typing import List
 
-
-@dataclass
-class Position:
-    row: int
-    column: int
-
-    def __add__(self,
-                other: Position) -> Position:
-        return Position(self.row + other.row, self.column + other.column)
-
-    def __repr__(self):
-        return f"({self.row}, {self.column})"
-
-    def manhattan_distance(self,
-                           other: Position) -> int:
-        return abs(self.row - other.row) + abs(self.column - other.column)
+from src.util.position import Position
 
 
 class Universe:

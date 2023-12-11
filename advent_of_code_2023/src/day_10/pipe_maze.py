@@ -1,22 +1,6 @@
-from __future__ import annotations
-from dataclasses import dataclass
-from typing import Final, List
+from typing import List
 
-
-@dataclass
-class Position:
-    row: int
-    column: int
-
-    def __add__(self,
-                other: Position) -> Position:
-        return Position(self.row + other.row, self.column + other.column)
-
-
-NORTH: Final[Position] = Position(-1, 0)
-EAST: Final[Position] = Position(0, 1)
-SOUTH: Final[Position] = Position(1, 0)
-WEST: Final[Position] = Position(0, -1)
+from src.util.position import Position, EAST, WEST, SOUTH, NORTH
 
 
 class Sketch:
