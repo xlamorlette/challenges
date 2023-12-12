@@ -1,7 +1,8 @@
 from typing import Final, List
 
-from src.day_12.hot_springs import compute_sum_of_broken_spring_arrangements, get_continuous_group_lengths, \
-    get_nb_broken_arrangements, is_arrangement_valid
+from src.day_12.hot_springs import compute_sum_of_broken_spring_arrangements, \
+    compute_sum_of_broken_spring_arrangements_unfolded, get_continuous_group_lengths, get_nb_broken_arrangements, \
+    get_nb_broken_arrangements_unfolded, is_arrangement_valid
 
 INPUT: Final[str] = """???.### 1,1,3
 .??..??...?##. 1,1,3
@@ -33,5 +34,19 @@ def test_is_arrangement_valid():
 
 
 def test_get_continuous_group_lengths():
-    assert not get_continuous_group_lengths([])
+    assert get_continuous_group_lengths([1]) == [1]
     assert get_continuous_group_lengths([11, 12, 1, 2, 5]) == [2, 1, 2]
+
+
+def test_get_nb_broken_arrangements_unfolded():
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[0]) == 1
+    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[1]) == 16384
+    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[2]) == 1
+    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[3]) == 16
+    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[4]) == 2500
+    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[5]) == 506250
+
+
+def test_compute_sum_of_broken_spring_arrangements_unfolded():
+    assert compute_sum_of_broken_spring_arrangements_unfolded(INPUT_LINES[0:1]) == 1
+    # assert compute_sum_of_broken_spring_arrangements_unfolded(INPUT_LINES) == 525152
