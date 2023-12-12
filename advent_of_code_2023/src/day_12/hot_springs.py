@@ -1,4 +1,4 @@
-import itertools
+import functools
 from typing import List, Tuple
 
 
@@ -8,14 +8,40 @@ def compute_sum_of_broken_spring_arrangements(lines: List[str]) -> int:
 
 def get_nb_broken_arrangements(line: str) -> int:
     statuses, damaged_groups_string = line.split(" ")
-    damaged_groups: List[int] = list(map(int, damaged_groups_string.split(",")))
-    unknown_state_positions: List[int] = [index for index, character in enumerate(statuses) if character == "?"]
-    known_damaged_positions: List[int] = [index for index, character in enumerate(statuses) if character == "#"]
-    nb_damaged: int = sum(damaged_groups)
-    nb_unknown_damaged: int = nb_damaged - len(known_damaged_positions)
-    return sum(is_arrangement_valid(known_damaged_positions, candidate_damaged_positions, damaged_groups)
-               for candidate_damaged_positions in itertools.combinations(unknown_state_positions,
-                                                                         nb_unknown_damaged))
+    damaged_groups: Tuple = tuple(map(int, damaged_groups_string.split(",")))
+    return get_nb_combinations(statuses, damaged_groups)
+
+
+@functools.cache
+def get_nb_combinations(statuses: str,
+                        damaged_groups: Tuple) -> int:
+    if len(damaged_groups) == 0:
+        return int("#" not in statuses)
+    if len(statuses) == 0:
+        return int(len(damaged_groups) == 0)
+    match statuses[0]:
+        case ".":
+            return get_nb_combinations(statuses[1:], damaged_groups)
+        case "?":
+            alternate_statuses = ["#" + statuses[1:], "." + statuses[1:]]
+            return sum(get_nb_combinations(alternate, damaged_groups) for alternate in alternate_statuses)
+        case "#":
+            return get_nb_combinations_matching_first_group(statuses, damaged_groups)
+        case other:
+            assert False, f"invalid character in statuses: {other}"
+
+
+def get_nb_combinations_matching_first_group(statuses: str,
+                                             damaged_groups: Tuple) -> int:
+    assert statuses[0] == "#", f"unexpected statuses when matching first group: {statuses}"
+    group_length: int = damaged_groups[0]
+    if len(statuses) < group_length:
+        return 0
+    if "." in statuses[:group_length]:
+        return 0
+    if len(statuses) > group_length and statuses[group_length] == "#":
+        return 0
+    return get_nb_combinations(statuses[group_length + 1:], damaged_groups[1:])
 
 
 def is_arrangement_valid(known_damaged_positions: List[int],

@@ -40,13 +40,13 @@ def test_get_continuous_group_lengths():
 
 def test_get_nb_broken_arrangements_unfolded():
     assert get_nb_broken_arrangements_unfolded(INPUT_LINES[0]) == 1
-    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[1]) == 16384
-    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[2]) == 1
-    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[3]) == 16
-    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[4]) == 2500
-    # assert get_nb_broken_arrangements_unfolded(INPUT_LINES[5]) == 506250
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[1]) == 16384
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[2]) == 1
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[3]) == 16
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[4]) == 2500
+    assert get_nb_broken_arrangements_unfolded(INPUT_LINES[5]) == 506250
 
 
 def test_compute_sum_of_broken_spring_arrangements_unfolded():
     assert compute_sum_of_broken_spring_arrangements_unfolded(INPUT_LINES[0:1]) == 1
-    # assert compute_sum_of_broken_spring_arrangements_unfolded(INPUT_LINES) == 525152
+    assert compute_sum_of_broken_spring_arrangements_unfolded(INPUT_LINES) == 525152
