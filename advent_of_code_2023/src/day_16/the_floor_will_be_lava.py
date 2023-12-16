@@ -1,5 +1,6 @@
+from collections import deque
 from dataclasses import dataclass
-from typing import List, Set
+from typing import Deque, List, Set
 
 from src.util.position import Position, NORTH, SOUTH, EAST, WEST
 
@@ -7,7 +8,7 @@ from src.util.position import Position, NORTH, SOUTH, EAST, WEST
 Direction = Position
 
 
-@dataclass
+@dataclass(frozen=True)
 class Beam:
     position: Position
     direction: Direction
@@ -17,7 +18,7 @@ class Contraption:
     grid: List[List[str]]
     height: int
     width: int
-    visited_cells: List[List[Set[Direction]]]
+    visited_beams: Set[Beam]
 
     def __init__(self,
                  lines: List[str]):
@@ -32,14 +33,12 @@ class Contraption:
 
     def propagate_beam(self,
                        start_beam: Beam = Beam(Position(0, 0), EAST)):
-        self.visited_cells = [[set() for _column in range(self.width)] for _row in range(self.height)]
-        self.visited_cells[start_beam.position.row][start_beam.position.column].add(start_beam.direction)
-        propagation_list: List[Beam] = [start_beam]
+        self.visited_beams = {start_beam}
+        propagation_list: Deque[Beam] = deque([start_beam])
         while len(propagation_list) > 0:
-            next_beams: List[Beam] = self.get_next_beams(propagation_list.pop())
-            for beam in next_beams:
-                if beam.direction not in self.visited_cells[beam.position.row][beam.position.column]:
-                    self.visited_cells[beam.position.row][beam.position.column].add(beam.direction)
+            for beam in self.get_next_beams(propagation_list.popleft()):
+                if beam not in self.visited_beams:
+                    self.visited_beams.add(beam)
                     propagation_list.append(beam)
 
     def get_next_beams(self,
@@ -67,7 +66,7 @@ class Contraption:
         return 0 <= position.row < self.height and 0 <= position.column < self.width
 
     def get_nb_energized_tiles(self) -> int:
-        return sum(sum(len(cell) != 0 for cell in row) for row in self.visited_cells)
+        return len(set(beam.position for beam in self.visited_beams))
 
 
 def compute_energized_tiles_number(lines: List[str]) -> int:

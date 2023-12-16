@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Final
 
 
-@dataclass
+@dataclass(frozen=True)
 class Position:
     row: int
     column: int
@@ -18,17 +18,6 @@ class Position:
     def manhattan_distance(self,
                            other: Position) -> int:
         return abs(self.row - other.row) + abs(self.column - other.column)
-
-    def __key(self):
-        return self.row, self.column
-
-    def __hash__(self):
-        return hash(self.__key())
-
-    def __eq__(self, other):
-        if isinstance(other, Position):
-            return self.__key() == other.__key()  # pylint: disable=protected-access
-        return NotImplemented
 
 
 NORTH: Final[Position] = Position(-1, 0)

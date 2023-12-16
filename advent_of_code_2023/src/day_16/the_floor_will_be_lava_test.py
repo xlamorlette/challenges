@@ -39,9 +39,10 @@ def test_contraption_get_next_beams():
 def test_contraption_propagate_beam():
     contraption = Contraption(INPUT_LINES)
     contraption.propagate_beam()
-    assert contraption.visited_cells[0][0] == {EAST}
-    assert contraption.visited_cells[0][2] == {WEST}
-    assert contraption.visited_cells[7][1] == {SOUTH, NORTH}
+    assert Beam(Position(0, 0), EAST) in contraption.visited_beams
+    assert Beam(Position(0, 2), WEST) in contraption.visited_beams
+    assert Beam(Position(7, 1), SOUTH) in contraption.visited_beams
+    assert Beam(Position(7, 1), NORTH) in contraption.visited_beams
 
 
 def test_compute_maximum_energized_tiles_number():
