@@ -12,6 +12,10 @@ class Position:
                 other: Position) -> Position:
         return Position(self.row + other.row, self.column + other.column)
 
+    def __mul__(self,
+                factor: int) -> Position:
+        return Position(self.row * factor, self.column * factor)
+
     def __repr__(self):
         return f"({self.row}, {self.column})"
 
