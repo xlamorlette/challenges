@@ -45,7 +45,7 @@ What is the sum of those counts?
 
 --- Part Two ---
 
-Cn each row, replace the list of spring conditions with five copies of itself (separated by ?) and replace the list of
+On each row, replace the list of spring conditions with five copies of itself (separated by ?) and replace the list of
 contiguous groups of damaged springs with five copies of itself (separated by ,).
 
 So, this row:
