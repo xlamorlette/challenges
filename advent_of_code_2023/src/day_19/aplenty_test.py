@@ -1,6 +1,7 @@
 from typing import Final
 
-from src.day_19.aplenty import Part, Workflow, compute_accepted_parts_rating_sum
+from src.day_19.aplenty import Part, Workflow, compute_accepted_parts_rating_sum, \
+    compute_number_of_accepted_combinations
 
 
 INPUT: Final[str] = """px{a<2006:qkq,m>2090:A,rfg}
@@ -35,3 +36,14 @@ def test_part_get_ratings_sum():
 def test_workflow_apply():
     assert Workflow("s<1351:px,qqz").apply(Part("{x=787,m=2655,a=1222,s=2876}")) == "qqz"
     assert Workflow("s>2770:qs,m<1801:hdj,R").apply(Part("{x=787,m=2655,a=1222,s=2876}")) == "qs"
+
+
+def test_compute_number_of_accepted_combinations():
+    assert compute_number_of_accepted_combinations(INPUT_LINES) == 167409079868000
+
+
+def test_workflow_get_ranges_per_target():
+    assert Workflow("s<1351:px,qqz").get_ranges_per_target({"x": range(1, 4001), "s": range(1, 4001)}) == [
+        ("px", {"x": range(1, 4001), "s": range(1, 1351)}),
+        ("qqz", {"x": range(1, 4001), "s": range(1351, 4001)})
+    ]
