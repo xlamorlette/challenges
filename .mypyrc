@@ -1,0 +1,5 @@
+[mypy]
+namespace_packages = False
+show_error_codes = True
+warn_unused_ignores = True
+disable_error_code = annotation-unchecked

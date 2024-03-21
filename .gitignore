@@ -20,7 +20,7 @@ CMakeUserPresets.json
 .vscode/tasks.json
 
 # Jetbrains IDEs
-/.idea
+.idea
 
 # links to root script
 interval_map/manage.pl

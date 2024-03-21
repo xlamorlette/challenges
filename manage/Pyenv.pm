@@ -41,6 +41,7 @@ sub preparePyenv {
     executeTestCommand("python -m venv $pyenvDirectory", "initialise Python virtualenv", $_verbose);
     executeTestCommand("$pyenv; pip install -r $requirementsFile", "setup Python virtualenv", $_verbose);
     executeTestCommand("$pyenv; pip list --outdated", "list outdated dependencies", $_verbose);
+    executeTestCommand("mkdir .mypy_cache", "create Mypy cache directory", $_verbose);
 }
 
 1;
