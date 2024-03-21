@@ -1,4 +1,9 @@
-# 35min -> bois 2
+# 35min -> Bois 2
+# 50min -> Bronze
+
+# TODO:
+# Handle moves across limits
+# Don't target same pellet: store already targeted pellets
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -115,19 +120,20 @@ class Solver:
         self.grid = grid
         self.state = state
 
-    def get_move(self):
-        pellet: Pellet = self.find_closest_pellet()
-        return f"MOVE 0 {pellet.position.row} {pellet.position.column}"
-
-    def find_closest_pellet(self) -> Pellet:
-        my_pac: Pac = Pac()
+    def get_moves(self) -> list[str]:
+        moves: list[str] = []
         for pac in self.state.pac_list:
             if pac.mine:
-                my_pac = pac
+                pellet: Pellet = self.find_closest_pellet(pac)
+                moves.append(f"MOVE {pac.pac_id} {pellet.position.row} {pellet.position.column}")
+        return moves
+
+    def find_closest_pellet(self,
+                            pac: Pac) -> Pellet:
         closest_pellet: Pellet = Pellet()
         shortest_distance: float = 1000.0
         for pellet in self.state.pellet_list:
-            distance = float(my_pac.position.manhattan_distance(pellet.position)) / pellet.value
+            distance = float(pac.position.manhattan_distance(pellet.position)) / pellet.value
             if distance < shortest_distance:
                 shortest_distance = distance
                 closest_pellet = pellet
@@ -141,10 +147,10 @@ def main():
         state: State = State()
         state.init_from_input()
         solver: Solver = Solver(grid, state)
-        print(solver.get_move())
+        moves: list[str] = solver.get_moves()
+        concatenated_moves = " | ".join(moves)
+        print(concatenated_moves)
 
 
 if __name__ == '__main__':
     main()
-
-
