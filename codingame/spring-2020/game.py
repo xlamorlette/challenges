@@ -1,36 +1,150 @@
-def an_example_function() -> int:
-    return 42
+# 35min -> bois 2
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Final
+
+
+@dataclass(frozen=True, order=True)
+class Position:
+    row: int
+    column: int
+
+    def __add__(self,
+                other: Position) -> Position:
+        return Position(self.row + other.row, self.column + other.column)
+
+    def __mul__(self,
+                factor: int) -> Position:
+        return Position(self.row * factor, self.column * factor)
+
+    def __repr__(self):
+        return f"({self.row}, {self.column})"
+
+    def manhattan_distance(self,
+                           other: Position) -> int:
+        return abs(self.row - other.row) + abs(self.column - other.column)
+
+    def opposite(self) -> Position:
+        return Position(- self.row, - self.column)
+
+
+NIL_POSITION: Final[Position] = Position(0, 0)
+NORTH: Final[Position] = Position(-1, 0)
+EAST: Final[Position] = Position(0, 1)
+SOUTH: Final[Position] = Position(1, 0)
+WEST: Final[Position] = Position(0, -1)
+ALL_DIRECTIONS: Final[list[Position]] = [NORTH, EAST, SOUTH, WEST]
+
+
+class Grid:
+    width: int = 0
+    height: int = 0
+    rows: list[str]
+
+    def init_from_input(self):
+        # width: size of the grid
+        # height: top left corner is (x=0, y=0)
+        self.width, self.height = [int(i) for i in input().split()]
+        self.rows = []
+        for i in range(self.height):
+            row = input()  # one line of the grid: space " " is floor, pound "#" is wall
+            self.rows.append(row)
+
+
+class Pac:
+    pac_id: int = 0
+    mine: bool = True
+    position: Position = NIL_POSITION
+    type_id: str = ""
+    speed_turns_left: int = 0
+    ability_cooldown: int = 0
+
+    def init_from_input(self):
+        inputs = input().split()
+        self.pac_id = int(inputs[0])  # pac number (unique within a team)
+        self.mine = inputs[1] != "0"  # true if this pac is yours
+        row = int(inputs[2])  # position in the grid
+        column = int(inputs[3])  # position in the grid
+        self.position = Position(row, column)
+        self.type_id = inputs[4]  # unused in wood leagues
+        self.speed_turns_left = int(inputs[5])  # unused in wood leagues
+        self.ability_cooldown = int(inputs[6])  # unused in wood leagues
+
+
+class Pellet:
+    position: Position = NIL_POSITION
+    value: int = 0
+
+    def init_from_input(self):
+        row, column, self.value = [int(j) for j in input().split()]
+        self.position = Position(row, column)
+
+
+class State:
+    my_score: int = 0
+    opponent_score: int = 0
+    pac_list: list[Pac]
+    pellet_list: list[Pellet]
+
+    def init_from_input(self):
+        self.my_score, self.opponent_score = [int(i) for i in input().split()]
+
+        self.pac_list = []
+        visible_pac_count = int(input())  # all your pacs and enemy pacs in sight
+        for i in range(visible_pac_count):
+            pac = Pac()
+            pac.init_from_input()
+            self.pac_list.append(pac)
+
+        self.pellet_list = []
+        visible_pellet_count = int(input())  # all pellets in sight
+        for i in range(visible_pellet_count):
+            pellet = Pellet()
+            pellet.init_from_input()
+            self.pellet_list.append(pellet)
+
+
+class Solver:
+    grid: Grid
+    state: State
+
+    def __init__(self,
+                 grid: Grid,
+                 state: State):
+        self.grid = grid
+        self.state = state
+
+    def get_move(self):
+        pellet: Pellet = self.find_closest_pellet()
+        return f"MOVE 0 {pellet.position.row} {pellet.position.column}"
+
+    def find_closest_pellet(self) -> Pellet:
+        my_pac: Pac = Pac()
+        for pac in self.state.pac_list:
+            if pac.mine:
+                my_pac = pac
+        closest_pellet: Pellet = Pellet()
+        shortest_distance: float = 1000.0
+        for pellet in self.state.pellet_list:
+            distance = float(my_pac.position.manhattan_distance(pellet.position)) / pellet.value
+            if distance < shortest_distance:
+                shortest_distance = distance
+                closest_pellet = pellet
+        return closest_pellet
+
+
+def main():
+    grid: Grid = Grid()
+    grid.init_from_input()
+    while True:
+        state: State = State()
+        state.init_from_input()
+        solver: Solver = Solver(grid, state)
+        print(solver.get_move())
 
 
 if __name__ == '__main__':
-    # Grab the pellets as fast as you can!
+    main()
 
-    # width: size of the grid
-    # height: top left corner is (x=0, y=0)
-    width, height = [int(i) for i in input().split()]
-    for i in range(height):
-        row = input()  # one line of the grid: space " " is floor, pound "#" is wall
 
-    # game loop
-    while True:
-        my_score, opponent_score = [int(i) for i in input().split()]
-        visible_pac_count = int(input())  # all your pacs and enemy pacs in sight
-        for i in range(visible_pac_count):
-            inputs = input().split()
-            pac_id = int(inputs[0])  # pac number (unique within a team)
-            mine = inputs[1] != "0"  # true if this pac is yours
-            x = int(inputs[2])  # position in the grid
-            y = int(inputs[3])  # position in the grid
-            type_id = inputs[4]  # unused in wood leagues
-            speed_turns_left = int(inputs[5])  # unused in wood leagues
-            ability_cooldown = int(inputs[6])  # unused in wood leagues
-        visible_pellet_count = int(input())  # all pellets in sight
-        for i in range(visible_pellet_count):
-            # value: amount of points this pellet is worth
-            x, y, value = [int(j) for j in input().split()]
-
-        # Write an action using print
-        # To debug: print("Debug messages...", file=sys.stderr, flush=True)
-
-        # MOVE <pacId> <x> <y>
-        print("MOVE 0 15 10")
