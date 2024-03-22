@@ -1,10 +1,11 @@
 # 35min : Bois 2
 # 50min : Bronze 846
 # 1h10 : Bronze 822
-# 2h : Bronze 863
+# 2h : Bronze 815
+# 2h30 : Bronze 483
 
 # TODO:
-# Switch type is opponent pac nearby
+# rushing only opponents pacs
 # Maintain grid step:
 #   start: all cells are unknown
 #   each turn:
@@ -24,7 +25,7 @@ from __future__ import annotations
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, Optional
 
 
 def debug(message: str):
@@ -106,6 +107,29 @@ class Pac:
             ability_cooldown=ability_cooldown
         )
 
+    def does_beat(self,
+                  opponent_pac: Pac) -> bool:
+        if self.type_id == opponent_pac.type_id:
+            return False
+        match self.type_id:
+            case "ROCK":
+                return opponent_pac.type_id == "SCISSORS"
+            case "SCISSORS":
+                return opponent_pac.type_id == "PAPER"
+            case "PAPER":
+                return opponent_pac.type_id == "ROCK"
+        return False
+
+    def get_beating_type(self) -> str:
+        match self.type_id:
+            case "ROCK":
+                return "PAPER"
+            case "SCISSORS":
+                return "ROCK"
+            case "PAPER":
+                return "SCISSORS"
+        assert False
+
 
 @dataclass(frozen=True, order=True)
 class Pellet:
@@ -140,10 +164,16 @@ class State:
         raise RuntimeError(f"Pac {mine} {pac_id} not found")
 
 
+@dataclass
+class Target:
+    pellet: Optional[Pellet] = None
+    defend_pac: Optional[Pac] = None
+    attack_pac: Optional[Pac] = None
+
+
 class Solver:
     grid: Grid
     state: State
-    targeted_pellets: list[Pellet]
 
     def __init__(self,
                  grid: Grid,
@@ -152,18 +182,39 @@ class Solver:
         self.state = state
 
     def get_moves(self) -> list[str]:
-        self.targeted_pellets = []
-        target_pellet_per_pac: dict[Pac, Pellet] = {
-            pac: self.find_closest_pellet(pac) for pac in self.state.pac_list if pac.mine}
-        self.solve_common_targets(target_pellet_per_pac)
-        return self.get_moves_from_targets(target_pellet_per_pac)
+        target_per_pac: dict[Pac, Target] = {
+            pac: self.get_target(pac) for pac in self.state.pac_list if pac.mine
+        }
+        self.solve_common_targets(target_per_pac)
+        return self.get_moves_from_targets(target_per_pac)
+
+    def get_target(self,
+                   pac: Pac) -> Target:
+        target: Target = Target()
+        self.look_for_opponent_pacs(pac, target)
+        target.pellet = self.find_closest_pellet(pac)
+        return target
+
+    def look_for_opponent_pacs(self,
+                               pac: Pac,
+                               target: Target):
+        for opponent_pac in self.state.pac_list:
+            if opponent_pac.mine:
+                continue
+            if opponent_pac.position.manhattan_distance(pac.position) > 5:
+                continue
+            if opponent_pac.does_beat(pac):
+                target.defend_pac = opponent_pac
+            elif pac.does_beat(opponent_pac):
+                target.attack_pac = opponent_pac
 
     def find_closest_pellet(self,
-                            pac: Pac) -> Pellet:
+                            pac: Pac,
+                            excluded_pellets: Optional[list[Pellet]] = None) -> Pellet:
         closest_pellet: Pellet = Pellet()
         shortest_distance: float = 1000.0
         for pellet in self.state.pellet_list:
-            if pellet in self.targeted_pellets:
+            if excluded_pellets is not None and pellet in excluded_pellets:
                 continue
             distance = float(pac.position.manhattan_distance(pellet.position)) / pellet.value
             if distance < shortest_distance:
@@ -172,13 +223,15 @@ class Solver:
         return closest_pellet
 
     def solve_common_targets(self,
-                             target_pellet_per_pac: dict[Pac, Pellet]):
+                             target_per_pac: dict[Pac, Target]):
         pac_list_per_target_pellet = defaultdict(list)
-        for pac, pellet in target_pellet_per_pac.items():
-            pac_list_per_target_pellet[pellet].append(pac)
-        self.targeted_pellets = list(pac_list_per_target_pellet.keys())
+        for pac, target in target_per_pac.items():
+            if target.pellet is not None:
+                pellet: Pellet = target.pellet
+                pac_list_per_target_pellet[pellet].append(pac)
+        targeted_pellets = list(pac_list_per_target_pellet.keys())
         for pellet, pac_list in pac_list_per_target_pellet.items():
-            if len(pac_list) > 2:
+            if len(pac_list) > 1:
                 shortest_distance: float = 1000.0
                 for pac in pac_list:
                     distance = float(pellet.position.manhattan_distance(pac.position)) \
@@ -188,15 +241,29 @@ class Solver:
                     distance = float(pellet.position.manhattan_distance(pac.position)) \
                         + (float(pac.pac_id) / 10)
                     if distance > shortest_distance:
-                        target_pellet_per_pac[pac] = self.find_closest_pellet(pac)
+                        target_per_pac[pac].pellet = self.find_closest_pellet(pac, targeted_pellets)
 
     def get_moves_from_targets(self,
-                               target_pellet_per_pac: dict[Pac, Pellet]) -> list[str]:
-        return [self.get_pac_action(pac, pellet) for pac, pellet in target_pellet_per_pac.items()]
+                               target_per_pac: dict[Pac, Target]) -> list[str]:
+        return [self.get_pac_action(pac, target) for pac, target in target_per_pac.items()]
 
     def get_pac_action(self,
                        pac: Pac,
-                       target_pellet: Pellet) -> str:
+                       target: Target) -> str:
+        if pac.ability_cooldown == 0:
+            if target.defend_pac is not None:
+                new_type_id: str = target.defend_pac.get_beating_type()
+                return f"SWITCH {pac.pac_id} {new_type_id} switch to defend against {target.defend_pac.pac_id}"
+            if target.attack_pac is not None:
+                attack_pac: Pac = target.attack_pac
+                if pac.position.manhattan_distance(attack_pac.position) <= 1 \
+                        or pac.speed_turns_left > 0 \
+                        or pac.ability_cooldown > 0:
+                    return f"MOVE {pac.pac_id} {attack_pac.position.row} {attack_pac.position.column}" \
+                           + f" attack {attack_pac.pac_id}"
+                return f"SPEED {pac.pac_id} rush to attack {attack_pac.pac_id}"
+        assert target.pellet is not None
+        target_pellet: Pellet = target.pellet
         if self.should_speed(pac, target_pellet):
             return f"SPEED {pac.pac_id} rush to {target_pellet.position}"
         return f"MOVE {pac.pac_id} {target_pellet.position.row} {target_pellet.position.column}" \
