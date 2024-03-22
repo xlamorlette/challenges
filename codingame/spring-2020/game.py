@@ -4,8 +4,10 @@
 # 2h : Bronze 815
 # 2h30 : Bronze 483
 # 2h40 : Bronze 246
+# 2h50 : Bronze 211
 
 # TODO:
+# run away from opponent pac if too close
 # Maintain grid step:
 #   start: all cells are unknown
 #   each turn:
@@ -250,17 +252,19 @@ class Solver:
     @staticmethod
     def get_pac_action(pac: Pac,
                        target: Target) -> str:
-        if pac.ability_cooldown == 0:
-            if target.defend_pac is not None:
+        if target.defend_pac is not None:
+            if pac.ability_cooldown == 0:
                 new_type_id: str = target.defend_pac.get_beating_type()
                 return f"SWITCH {pac.pac_id} {new_type_id} switch to defend against {target.defend_pac.pac_id}"
-            if target.attack_pac is not None:
-                attack_pac: Pac = target.attack_pac
-                if pac.position.manhattan_distance(attack_pac.position) <= 1 \
-                        or pac.speed_turns_left > 0 \
-                        or pac.ability_cooldown > 0:
-                    return f"MOVE {pac.pac_id} {attack_pac.position.row} {attack_pac.position.column}" \
-                           + f" attack {attack_pac.pac_id}"
+            # TODO: run away
+        if target.attack_pac is not None:
+            attack_pac: Pac = target.attack_pac
+            if pac.position.manhattan_distance(attack_pac.position) <= 1 \
+                    or pac.speed_turns_left > 0 \
+                    or pac.ability_cooldown > 0:
+                return f"MOVE {pac.pac_id} {attack_pac.position.row} {attack_pac.position.column}" \
+                       + f" attack {attack_pac.pac_id}"
+            if pac.ability_cooldown == 0:
                 return f"SPEED {pac.pac_id} rush to attack {attack_pac.pac_id}"
         assert target.pellet is not None
         target_pellet: Pellet = target.pellet
