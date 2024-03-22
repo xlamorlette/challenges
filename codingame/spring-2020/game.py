@@ -1,9 +1,10 @@
 # 35min : Bois 2
 # 50min : Bronze 846
 # 1h10 : Bronze 822
+# 2h : Bronze 863
 
 # TODO:
-# Don't target same pellet: store already targeted pellets
+# Switch type is opponent pac nearby
 # Maintain grid step:
 #   start: all cells are unknown
 #   each turn:
@@ -16,11 +17,18 @@
 #     Value of pellet divided by distance
 #     Value for unknown cell
 #     Value for opponent pac that can be eaten
-# Switch type is opponent pac nearby
+# Handle turn with speed only: keep in mind previously targeted pellets
+
 
 from __future__ import annotations
+import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Final
+
+
+def debug(message: str):
+    print(message, file=sys.stderr, flush=True)
 
 
 @dataclass(frozen=True, order=True)
@@ -70,6 +78,7 @@ class Grid:
             self.rows.append(row)
 
 
+@dataclass(frozen=True, order=True)
 class Pac:
     pac_id: int = 0
     mine: bool = True
@@ -78,25 +87,35 @@ class Pac:
     speed_turns_left: int = 0
     ability_cooldown: int = 0
 
-    def init_from_input(self):
+    @staticmethod
+    def get_pac_from_input() -> Pac:
         inputs = input().split()
-        self.pac_id = int(inputs[0])  # pac number (unique within a team)
-        self.mine = inputs[1] != "0"  # true if this pac is yours
+        pac_id = int(inputs[0])  # pac number (unique within a team)
+        mine = inputs[1] != "0"  # true if this pac is yours
         row = int(inputs[2])  # position in the grid
         column = int(inputs[3])  # position in the grid
-        self.position = Position(row, column)
-        self.type_id = inputs[4]  # unused in wood leagues
-        self.speed_turns_left = int(inputs[5])  # unused in wood leagues
-        self.ability_cooldown = int(inputs[6])  # unused in wood leagues
+        type_id = inputs[4]  # unused in wood leagues
+        speed_turns_left = int(inputs[5])  # unused in wood leagues
+        ability_cooldown = int(inputs[6])  # unused in wood leagues
+        return Pac(
+            pac_id=pac_id,
+            mine=mine,
+            position=Position(row, column),
+            type_id=type_id,
+            speed_turns_left=speed_turns_left,
+            ability_cooldown=ability_cooldown
+        )
 
 
+@dataclass(frozen=True, order=True)
 class Pellet:
     position: Position = NIL_POSITION
     value: int = 0
 
-    def init_from_input(self):
-        row, column, self.value = [int(j) for j in input().split()]
-        self.position = Position(row, column)
+    @staticmethod
+    def get_pellet_from_input() -> Pellet:
+        row, column, value = [int(j) for j in input().split()]
+        return Pellet(position=Position(row, column), value=value)
 
 
 class State:
@@ -107,25 +126,24 @@ class State:
 
     def init_from_input(self):
         self.my_score, self.opponent_score = [int(i) for i in input().split()]
-
-        self.pac_list = []
         visible_pac_count = int(input())  # all your pacs and enemy pacs in sight
-        for i in range(visible_pac_count):
-            pac = Pac()
-            pac.init_from_input()
-            self.pac_list.append(pac)
-
-        self.pellet_list = []
+        self.pac_list = [Pac.get_pac_from_input() for i in range(visible_pac_count)]
         visible_pellet_count = int(input())  # all pellets in sight
-        for i in range(visible_pellet_count):
-            pellet = Pellet()
-            pellet.init_from_input()
-            self.pellet_list.append(pellet)
+        self.pellet_list = [Pellet.get_pellet_from_input() for i in range(visible_pellet_count)]
+
+    def get_pac_by_id(self,
+                      mine: bool,
+                      pac_id: int) -> Pac:
+        for pac in self.pac_list:
+            if pac.mine == mine and pac.pac_id == pac_id:
+                return pac
+        raise RuntimeError(f"Pac {mine} {pac_id} not found")
 
 
 class Solver:
     grid: Grid
     state: State
+    targeted_pellets: list[Pellet]
 
     def __init__(self,
                  grid: Grid,
@@ -134,32 +152,62 @@ class Solver:
         self.state = state
 
     def get_moves(self) -> list[str]:
-        return [self.get_pac_action(pac) for pac in self.state.pac_list if pac.mine]
-
-    def get_pac_action(self,
-                       pac: Pac) -> str:
-        target_pellet: Pellet = self.find_closest_pellet(pac)
-        if self.should_speed(pac, target_pellet):
-            return f"SPEED {pac.pac_id}"
-        return f"MOVE {pac.pac_id} {target_pellet.position.row} {target_pellet.position.column}"
+        self.targeted_pellets = []
+        target_pellet_per_pac: dict[Pac, Pellet] = {
+            pac: self.find_closest_pellet(pac) for pac in self.state.pac_list if pac.mine}
+        self.solve_common_targets(target_pellet_per_pac)
+        return self.get_moves_from_targets(target_pellet_per_pac)
 
     def find_closest_pellet(self,
                             pac: Pac) -> Pellet:
         closest_pellet: Pellet = Pellet()
         shortest_distance: float = 1000.0
         for pellet in self.state.pellet_list:
+            if pellet in self.targeted_pellets:
+                continue
             distance = float(pac.position.manhattan_distance(pellet.position)) / pellet.value
             if distance < shortest_distance:
                 shortest_distance = distance
                 closest_pellet = pellet
         return closest_pellet
 
+    def solve_common_targets(self,
+                             target_pellet_per_pac: dict[Pac, Pellet]):
+        pac_list_per_target_pellet = defaultdict(list)
+        for pac, pellet in target_pellet_per_pac.items():
+            pac_list_per_target_pellet[pellet].append(pac)
+        self.targeted_pellets = list(pac_list_per_target_pellet.keys())
+        for pellet, pac_list in pac_list_per_target_pellet.items():
+            if len(pac_list) > 2:
+                shortest_distance: float = 1000.0
+                for pac in pac_list:
+                    distance = float(pellet.position.manhattan_distance(pac.position)) \
+                        + (float(pac.pac_id) / 10)
+                    shortest_distance = min(shortest_distance, distance)
+                for pac in pac_list:
+                    distance = float(pellet.position.manhattan_distance(pac.position)) \
+                        + (float(pac.pac_id) / 10)
+                    if distance > shortest_distance:
+                        target_pellet_per_pac[pac] = self.find_closest_pellet(pac)
+
+    def get_moves_from_targets(self,
+                               target_pellet_per_pac: dict[Pac, Pellet]) -> list[str]:
+        return [self.get_pac_action(pac, pellet) for pac, pellet in target_pellet_per_pac.items()]
+
+    def get_pac_action(self,
+                       pac: Pac,
+                       target_pellet: Pellet) -> str:
+        if self.should_speed(pac, target_pellet):
+            return f"SPEED {pac.pac_id} rush to {target_pellet.position}"
+        return f"MOVE {pac.pac_id} {target_pellet.position.row} {target_pellet.position.column}" \
+               + f" go for {target_pellet.position}"
+
     @staticmethod
     def should_speed(pac: Pac,
                      target_pellet: Pellet) -> bool:
         distance: int = pac.position.manhattan_distance(target_pellet.position)
         return distance > 2 \
-            and float(target_pellet.value) / distance > 1.1 \
+            and float(target_pellet.value) / distance > 1.5 \
             and pac.speed_turns_left == 0 \
             and pac.ability_cooldown == 0
 
