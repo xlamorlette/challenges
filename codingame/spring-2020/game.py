@@ -3,9 +3,9 @@
 # 1h10 : Bronze 822
 # 2h : Bronze 815
 # 2h30 : Bronze 483
+# 2h40 : Bronze 246
 
 # TODO:
-# rushing only opponents pacs
 # Maintain grid step:
 #   start: all cells are unknown
 #   each turn:
@@ -247,8 +247,8 @@ class Solver:
                                target_per_pac: dict[Pac, Target]) -> list[str]:
         return [self.get_pac_action(pac, target) for pac, target in target_per_pac.items()]
 
-    def get_pac_action(self,
-                       pac: Pac,
+    @staticmethod
+    def get_pac_action(pac: Pac,
                        target: Target) -> str:
         if pac.ability_cooldown == 0:
             if target.defend_pac is not None:
@@ -264,19 +264,8 @@ class Solver:
                 return f"SPEED {pac.pac_id} rush to attack {attack_pac.pac_id}"
         assert target.pellet is not None
         target_pellet: Pellet = target.pellet
-        if self.should_speed(pac, target_pellet):
-            return f"SPEED {pac.pac_id} rush to {target_pellet.position}"
         return f"MOVE {pac.pac_id} {target_pellet.position.row} {target_pellet.position.column}" \
                + f" go for {target_pellet.position}"
-
-    @staticmethod
-    def should_speed(pac: Pac,
-                     target_pellet: Pellet) -> bool:
-        distance: int = pac.position.manhattan_distance(target_pellet.position)
-        return distance > 2 \
-            and float(target_pellet.value) / distance > 1.5 \
-            and pac.speed_turns_left == 0 \
-            and pac.ability_cooldown == 0
 
 
 def main():
