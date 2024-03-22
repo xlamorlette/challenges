@@ -1,9 +1,22 @@
-# 35min -> Bois 2
-# 50min -> Bronze
+# 35min : Bois 2
+# 50min : Bronze 846
+# 1h10 : Bronze 822
 
 # TODO:
-# Handle moves across limits
 # Don't target same pellet: store already targeted pellets
+# Maintain grid step:
+#   start: all cells are unknown
+#   each turn:
+#     clear cells seen by pac
+#     fill cells from input
+# For each pac, test 4 directions.
+#   Evaluate each resulting position:
+#     Flood
+#       Handle moves across limits (also for testing 4 directions)
+#     Value of pellet divided by distance
+#     Value for unknown cell
+#     Value for opponent pac that can be eaten
+# Switch type is opponent pac nearby
 
 from __future__ import annotations
 from dataclasses import dataclass
@@ -121,12 +134,14 @@ class Solver:
         self.state = state
 
     def get_moves(self) -> list[str]:
-        moves: list[str] = []
-        for pac in self.state.pac_list:
-            if pac.mine:
-                pellet: Pellet = self.find_closest_pellet(pac)
-                moves.append(f"MOVE {pac.pac_id} {pellet.position.row} {pellet.position.column}")
-        return moves
+        return [self.get_pac_action(pac) for pac in self.state.pac_list if pac.mine]
+
+    def get_pac_action(self,
+                       pac: Pac) -> str:
+        target_pellet: Pellet = self.find_closest_pellet(pac)
+        if self.should_speed(pac, target_pellet):
+            return f"SPEED {pac.pac_id}"
+        return f"MOVE {pac.pac_id} {target_pellet.position.row} {target_pellet.position.column}"
 
     def find_closest_pellet(self,
                             pac: Pac) -> Pellet:
@@ -138,6 +153,15 @@ class Solver:
                 shortest_distance = distance
                 closest_pellet = pellet
         return closest_pellet
+
+    @staticmethod
+    def should_speed(pac: Pac,
+                     target_pellet: Pellet) -> bool:
+        distance: int = pac.position.manhattan_distance(target_pellet.position)
+        return distance > 2 \
+            and float(target_pellet.value) / distance > 1.1 \
+            and pac.speed_turns_left == 0 \
+            and pac.ability_cooldown == 0
 
 
 def main():
