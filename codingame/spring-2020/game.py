@@ -6,23 +6,22 @@
 # 2h50 : Bronze 211
 # 4h30 : Bronze 221
 # 5h20 : Bronze 362
+# 8h : Bronze 66
 
 # TODO:
-# For each pac, test 4 directions.
-#     Handle moves across limits.
-#   Evaluate each resulting position:
-#     Flood full map
-#     while flooding, add cell value divided by distance
-#       unknown cell: value 0.5
 # Avoid auto-blocking:
-#   simulate one turn move
-#   take randomly one pac and make it moving opposite direction
+#   get next position for all pacs
+#   for position shared by several pacs
+#     for each pac
+#       find a direction leading to another position
+#     stop when nb pacs - found another direction
+# only defensive action against opponent pac that can reach me
+# don't attack opponent pac that can switch
 # Try to chase unseen pacs:
 #   Value for opponent pac that can be eaten
 #   Negative value for opponent pac that can eat if no ability to switch
 #   add to opponent pac number of turn since last seen
 #   keep seen opponent pacs one turn (or two turns)
-# don't attack opponent pac that can switch
 # attack by switching at the last time
 # Handle turn with speed only:
 #   What is exactly the input?
@@ -31,7 +30,6 @@
 
 from __future__ import annotations
 import sys
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Final, Optional
@@ -221,7 +219,6 @@ class Grid:
 
     def get_cell(self,
                  position: Position) -> CellState:
-        assert self.is_position_valid(position)
         return self.cells[position.y][position.x]
 
     def set_cell(self,
@@ -230,16 +227,25 @@ class Grid:
         assert self.is_position_valid(position)
         self.cells[position.y][position.x] = state
 
+    def get_cell_value(self,
+                       position: Position) -> float:
+        match self.cells[position.y][position.x]:
+            case CellState.PELLET:
+                return 1.0
+            case CellState.SUPER_PELLET:
+                return 10.0
+            case CellState.UNKNOWN:
+                return 0.5
+        return 0.0
+
     def move(self,
              position: Position,
              direction: Position) -> Optional[Position]:
-        assert self.is_position_valid(position)
-        assert self.get_cell(position) != CellState.WALL
-        result_position = position + direction
         # if there is no wall on a border, there is no wall on the opposite side
-        x = result_position.x % self.width
-        y = result_position.y % self.height
-        result_position = Position(x, y)
+        result_position = Position(
+            (position.x + direction.x) % self.width,
+            (position.y + direction.y) % self.height
+        )
         if self.get_cell(result_position) == CellState.WALL:
             return None
         return result_position
@@ -274,6 +280,9 @@ class Grid:
             new_position: Optional[Position] = self.move(position, direction)
             while new_position is not None:
                 position = new_position
+                # we can loop infinitely if there is a whole traversing line
+                if position == pac.position:
+                    break
                 self.set_cell(position, CellState.EMPTY)
                 new_position = self.move(position, direction)
 
@@ -289,9 +298,9 @@ class Grid:
 
 @dataclass
 class Target:
-    pellet: Optional[Pellet] = None
     defend_pac: Optional[Pac] = None
     attack_pac: Optional[Pac] = None
+    explore_position: Position = NIL_POSITION
 
 
 class Solver:
@@ -308,14 +317,15 @@ class Solver:
         target_per_pac: dict[Pac, Target] = {
             pac: self.get_target(pac) for pac in self.state.pac_list if pac.mine
         }
-        self.solve_common_targets(target_per_pac)
+        # TODO: to be redone
+        # self.solve_common_targets(target_per_pac)
         return self.get_moves_from_targets(target_per_pac)
 
     def get_target(self,
                    pac: Pac) -> Target:
         target: Target = Target()
         self.look_for_opponent_pacs(pac, target)
-        target.pellet = self.find_closest_pellet(pac)
+        target.explore_position = self.get_best_next_position(pac)
         return target
 
     def look_for_opponent_pacs(self,
@@ -331,40 +341,45 @@ class Solver:
             elif pac.does_beat(opponent_pac):
                 target.attack_pac = opponent_pac
 
-    def find_closest_pellet(self,
-                            pac: Pac,
-                            excluded_pellets: Optional[list[Pellet]] = None) -> Pellet:
-        closest_pellet: Pellet = Pellet()
-        shortest_distance: float = 1000.0
-        for pellet in self.state.pellet_list:
-            if excluded_pellets is not None and pellet in excluded_pellets:
-                continue
-            distance = float(pac.position.manhattan_distance(pellet.position)) / pellet.value
-            if distance < shortest_distance:
-                shortest_distance = distance
-                closest_pellet = pellet
-        return closest_pellet
+    def get_best_next_position(self,
+                               pac: Pac) -> Position:
+        best_position: Position = pac.position
+        best_score: float = 0.0
+        for direction in ALL_DIRECTIONS:
+            position: Optional[Position] = self.grid.move(pac.position, direction)
+            if position is not None:
+                score = self.evaluate_position(position)
+                if score > best_score:
+                    best_score = score
+                    best_position = position
+        return best_position
 
-    def solve_common_targets(self,
-                             target_per_pac: dict[Pac, Target]):
-        pac_list_per_target_pellet = defaultdict(list)
-        for pac, target in target_per_pac.items():
-            if target.pellet is not None:
-                pellet: Pellet = target.pellet
-                pac_list_per_target_pellet[pellet].append(pac)
-        targeted_pellets = list(pac_list_per_target_pellet.keys())
-        for pellet, pac_list in pac_list_per_target_pellet.items():
-            if len(pac_list) > 1:
-                shortest_distance: float = 1000.0
-                for pac in pac_list:
-                    distance = float(pellet.position.manhattan_distance(pac.position)) \
-                        + (float(pac.pac_id) / 10)
-                    shortest_distance = min(shortest_distance, distance)
-                for pac in pac_list:
-                    distance = float(pellet.position.manhattan_distance(pac.position)) \
-                        + (float(pac.pac_id) / 10)
-                    if distance > shortest_distance:
-                        target_per_pac[pac].pellet = self.find_closest_pellet(pac, targeted_pellets)
+    def evaluate_position(self,
+                          position: Position) -> float:
+        score: float = 0.0
+        current_positions: list[Position] = [position]
+        nb_current_positions = 1
+        nb_turns = 1
+        is_position_seen: list[list[bool]] = [[False] * self.grid.width for _row in range(self.grid.height)]
+        while nb_current_positions > 0:
+            next_positions: list[Position] = [NIL_POSITION] * (nb_current_positions * 4)
+            nb_next_positions: int = 0
+            for index_current_position in range(nb_current_positions):
+                current_position = current_positions[index_current_position]
+                if is_position_seen[current_position.y][current_position.x]:
+                    continue
+                is_position_seen[current_position.y][current_position.x] = True
+                score += self.grid.get_cell_value(current_position) / float(nb_turns)
+                for direction in ALL_DIRECTIONS:
+                    next_position: Optional[Position] = self.grid.move(current_position, direction)
+                    if next_position is None or is_position_seen[next_position.y][next_position.x]:
+                        continue
+                    next_positions[nb_next_positions] = next_position
+                    nb_next_positions += 1
+            nb_turns += 1
+            current_positions = next_positions
+            nb_current_positions = nb_next_positions
+        return score
 
     def get_moves_from_targets(self,
                                target_per_pac: dict[Pac, Target]) -> list[str]:
@@ -381,9 +396,13 @@ class Solver:
             action = self.get_attack_action(pac, target.attack_pac)
             if action is not None:
                 return action
-        assert target.pellet is not None
-        return f"MOVE {pac.pac_id} {target.pellet.position.x} {target.pellet.position.y}" \
-               + f" miam {target.pellet.position}"
+        text: str = ""
+        match self.grid.get_cell(target.explore_position):
+            case CellState.PELLET:
+                text = " miam"
+            case CellState.SUPER_PELLET:
+                text = " MIAM"
+        return f"MOVE {pac.pac_id} {target.explore_position.x} {target.explore_position.y}{text}"
 
     def get_defend_action(self,
                           pac: Pac,
@@ -417,7 +436,6 @@ def main():
         state: State = State()
         state.init_from_input()
         grid.update(state)
-        # debug(str(grid))
         solver: Solver = Solver(grid, state)
         moves: list[str] = solver.get_moves()
         concatenated_moves = " | ".join(moves)
