@@ -5,16 +5,16 @@
 # 3h : Bronze 211
 # 8h : Bronze 66
 # 8h15 : Argent 664
+# 8h30 : Argent 474
 
 # TODO:
-# don't attack opponent pac that can switch
+# keep seen opponent pacs one turn (or two turns)
 # only defensive action against opponent pac that can reach me
 # attack by switching at the last time
 # Try to chase unseen pacs:
 #   Value for opponent pac that can be eaten
 #   Negative value for opponent pac that can eat if no ability to switch
 #   add to opponent pac number of turn since last seen
-#   keep seen opponent pacs one turn (or two turns)
 # Handle turn with speed only:
 #   What is exactly the input?
 #   keep in mind previously targeted pellets
@@ -323,6 +323,7 @@ class Solver:
     def look_for_opponent_pacs(self,
                                pac: Pac,
                                target: Target):
+        # TODO: should take the closest defend and closest attacker
         for opponent_pac in self.state.pac_list:
             if opponent_pac.mine:
                 continue
@@ -330,8 +331,20 @@ class Solver:
                 continue
             if opponent_pac.does_beat(pac):
                 target.defend_pac = opponent_pac
-            elif pac.does_beat(opponent_pac):
+            elif pac.does_beat(opponent_pac) and not self.opponent_can_switch(pac, opponent_pac):
                 target.attack_pac = opponent_pac
+
+    @staticmethod
+    def opponent_can_switch(pac: Pac,
+                            opponent_pac: Pac) -> bool:
+        if opponent_pac.ability_cooldown == 0:
+            return True
+        distance: int = pac.position.manhattan_distance(opponent_pac.position)
+        if pac.speed_turns_left > distance / 2:
+            distance /= 2
+        else:
+            distance -= pac.speed_turns_left
+        return opponent_pac.ability_cooldown < distance
 
     def get_best_next_position(self,
                                pac: Pac) -> Position:
