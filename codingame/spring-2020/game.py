@@ -6,18 +6,16 @@
 # 8h : Bronze 66
 # 8h15 : Argent 664
 # 8h30 : Argent 474
+# 10h : Argent 376
 
 # TODO:
-# keep seen opponent pacs one turn (or two turns)
-# only defensive action against opponent pac that can reach me
-# attack by switching at the last time
-# Try to chase unseen pacs:
-#   Value for opponent pac that can be eaten
-#   Negative value for opponent pac that can eat if no ability to switch
-#   add to opponent pac number of turn since last seen
+# keep in mind latest two turns positions for all pacs and forbid them
+# tweak evaluation function with gamma factor
+# speed at first turn
+# keep seen opponent pacs one turn
 # Handle turn with speed only:
 #   What is exactly the input?
-#   keep in mind previously targeted pellets
+#   avoid bumping self
 
 
 from __future__ import annotations
@@ -145,9 +143,10 @@ class State:
 
     def init_from_input(self):
         self.my_score, self.opponent_score = [int(i) for i in input().split()]
-        visible_pac_count = int(input())  # all your pacs and enemy pacs in sight
+        visible_pac_count = int(input())
         self.pac_list = [Pac.get_pac_from_input() for i in range(visible_pac_count)]
-        visible_pellet_count = int(input())  # all pellets in sight
+        self.pac_list = [pac for pac in self.pac_list if pac.type_id != "DEAD"]
+        visible_pellet_count = int(input())
         self.pellet_list = [Pellet.get_pellet_from_input() for i in range(visible_pellet_count)]
 
     def get_pac_by_id(self,
@@ -185,7 +184,7 @@ class Grid:
         self.width, self.height = [int(i) for i in input().split()]
         self.cells = [[CellState.UNKNOWN] * self.width for _row_index in range(self.height)]
         for row in range(self.height):
-            row_string = input()  # one line of the grid: space " " is floor, pound "#" is wall
+            row_string = input()
             assert len(row_string) == self.width
             for column in range(self.width):
                 match row_string[column]:
@@ -323,28 +322,37 @@ class Solver:
     def look_for_opponent_pacs(self,
                                pac: Pac,
                                target: Target):
-        # TODO: should take the closest defend and closest attacker
+        minimum_attacker_distance: int = 1000
+        minimum_defend_distance: int = 1000
         for opponent_pac in self.state.pac_list:
             if opponent_pac.mine:
                 continue
-            if opponent_pac.position.manhattan_distance(pac.position) > 6:
-                continue
-            if opponent_pac.does_beat(pac):
-                target.defend_pac = opponent_pac
+            distance = opponent_pac.position.manhattan_distance(pac.position)
+            if opponent_pac.does_beat(pac) or self.opponent_can_switch(pac, opponent_pac):
+                if distance < minimum_defend_distance:
+                    minimum_defend_distance = distance
+                    target.defend_pac = opponent_pac
             elif pac.does_beat(opponent_pac) and not self.opponent_can_switch(pac, opponent_pac):
-                target.attack_pac = opponent_pac
+                if distance < minimum_attacker_distance:
+                    minimum_attacker_distance = distance
+                    target.attack_pac = opponent_pac
 
-    @staticmethod
-    def opponent_can_switch(pac: Pac,
+    def opponent_can_switch(self,
+                            pac: Pac,
                             opponent_pac: Pac) -> bool:
         if opponent_pac.ability_cooldown == 0:
             return True
+        return opponent_pac.ability_cooldown < self.get_distance_with_speed(pac, opponent_pac)
+
+    @staticmethod
+    def get_distance_with_speed(pac: Pac,
+                                opponent_pac: Pac) -> int:
         distance: int = pac.position.manhattan_distance(opponent_pac.position)
         if pac.speed_turns_left > distance / 2:
             distance /= 2
         else:
             distance -= pac.speed_turns_left
-        return opponent_pac.ability_cooldown < distance
+        return distance
 
     def get_best_next_position(self,
                                pac: Pac) -> Position:
@@ -430,23 +438,32 @@ class Solver:
     def get_defend_action(self,
                           pac: Pac,
                           defend_pac: Pac) -> Optional[str]:
+        distance: int = self.get_distance_with_speed(defend_pac, pac)
+        if distance > 2:
+            return None
         if pac.ability_cooldown == 0:
             new_type_id: str = defend_pac.get_beating_type()
+            if new_type_id == pac.type_id:
+                return None
             return f"SWITCH {pac.pac_id} {new_type_id} switch to defend against {defend_pac.pac_id}"
-        # TODO: rather find the direction that maximise the distance with defend_pac
-        delta_position: Position = defend_pac.position - pac.position
-        target_position: Position = pac.position - delta_position
-        target_position = target_position.crop_to_limits(self.grid.get_max_position())
-        return f"MOVE {pac.pac_id} {target_position.x} {target_position.y}" \
-               + f" run away from {defend_pac.pac_id}"
+        maximum_distance: int = 0
+        best_position = pac.position
+        for direction in ALL_DIRECTIONS:
+            new_position: Optional[Position] = self.grid.move(pac.position, direction)
+            if new_position is not None:
+                distance = new_position.manhattan_distance(defend_pac.position)
+                if distance > maximum_distance:
+                    maximum_distance = distance
+                    best_position = new_position
+        return f"MOVE {pac.pac_id} {best_position.x} {best_position.y} run away from {defend_pac.pac_id}"
 
     @staticmethod
     def get_attack_action(pac: Pac,
                           attack_pac: Pac) -> Optional[str]:
         distance: int = pac.position.manhattan_distance(attack_pac.position)
-        if 1 < distance and pac.ability_cooldown == 0:
+        if 1 < distance and distance / 2 < attack_pac.ability_cooldown and pac.ability_cooldown == 0:
             return f"SPEED {pac.pac_id} rush to attack {attack_pac.pac_id}"
-        if distance <= 2 or pac.speed_turns_left > 0:
+        if distance <= 2 or pac.speed_turns_left / 2 >= distance:
             return f"MOVE {pac.pac_id} {attack_pac.position.x} {attack_pac.position.y}" \
                    + f" attack {attack_pac.pac_id}"
         return None
