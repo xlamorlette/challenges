@@ -5,15 +5,9 @@
 # 2h30 : Bronze 483
 # 2h50 : Bronze 211
 # 4h30 : Bronze 221
+# 5h20 : Bronze 362
 
 # TODO:
-# Maintain grid step:
-#   cell state: empty / unknown / filled
-#   start: all cells are unknown
-#   each turn:
-#     set all filled cells to unknown
-#     set all cells seen by pacs to empty
-#     fill cells from input
 # For each pac, test 4 directions.
 #     Handle moves across limits.
 #   Evaluate each resulting position:
@@ -39,6 +33,7 @@ from __future__ import annotations
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from typing import Final, Optional
 
 
@@ -86,22 +81,6 @@ EAST: Final[Position] = Position(1, 0)
 SOUTH: Final[Position] = Position(0, 1)
 WEST: Final[Position] = Position(-1, 0)
 ALL_DIRECTIONS: Final[list[Position]] = [NORTH, EAST, SOUTH, WEST]
-
-
-class Grid:
-    width: int = 0
-    height: int = 0
-    rows: list[str]
-
-    def init_from_input(self):
-        self.width, self.height = [int(i) for i in input().split()]
-        self.rows = []
-        for i in range(self.height):
-            row = input()  # one line of the grid: space " " is floor, pound "#" is wall
-            self.rows.append(row)
-
-    def get_max_position(self) -> Position:
-        return Position(x=self.width - 1, y=self.height - 1)
 
 
 @dataclass(frozen=True, order=True)
@@ -187,6 +166,125 @@ class State:
             if pac.mine == mine and pac.pac_id == pac_id:
                 return pac
         raise RuntimeError(f"Pac {mine} {pac_id} not found")
+
+
+class CellState(Enum):
+    WALL = 0
+    UNKNOWN = 1
+    EMPTY = 2
+    PELLET = 3
+    SUPER_PELLET = 4
+
+
+STRING_PER_CELL_STATE: Final[dict[CellState, str]] = {
+    CellState.WALL: "#",
+    CellState.UNKNOWN: ".",
+    CellState.EMPTY: " ",
+    CellState.PELLET: "+",
+    CellState.SUPER_PELLET: "X"
+}
+
+
+class Grid:
+    width: int = 0
+    height: int = 0
+    cells: list[list[CellState]]
+
+    def init_from_input(self):
+        self.width, self.height = [int(i) for i in input().split()]
+        self.cells = [[CellState.UNKNOWN] * self.width for _row_index in range(self.height)]
+        for row in range(self.height):
+            row_string = input()  # one line of the grid: space " " is floor, pound "#" is wall
+            assert len(row_string) == self.width
+            for column in range(self.width):
+                match row_string[column]:
+                    case ' ':
+                        self.cells[row][column] = CellState.UNKNOWN
+                    case '#':
+                        self.cells[row][column] = CellState.WALL
+                    case _:
+                        assert False, "wrong value when reading grid"
+
+    def __str__(self):
+        return "\n".join(self._row_string(row) for row in range(self.height))
+
+    def _row_string(self,
+                    row: int) -> str:
+        return "".join(STRING_PER_CELL_STATE[self.cells[row][column]] for column in range(self.width))
+
+    def is_position_valid(self,
+                          position: Position) -> bool:
+        return 0 <= position.x < self.width and 0 <= position.y < self.height
+
+    def get_max_position(self) -> Position:
+        return Position(x=self.width - 1, y=self.height - 1)
+
+    def get_cell(self,
+                 position: Position) -> CellState:
+        assert self.is_position_valid(position)
+        return self.cells[position.y][position.x]
+
+    def set_cell(self,
+                 position: Position,
+                 state: CellState):
+        assert self.is_position_valid(position)
+        self.cells[position.y][position.x] = state
+
+    def move(self,
+             position: Position,
+             direction: Position) -> Optional[Position]:
+        assert self.is_position_valid(position)
+        assert self.get_cell(position) != CellState.WALL
+        result_position = position + direction
+        # if there is no wall on a border, there is no wall on the opposite side
+        x = result_position.x % self.width
+        y = result_position.y % self.height
+        result_position = Position(x, y)
+        if self.get_cell(result_position) == CellState.WALL:
+            return None
+        return result_position
+
+    def update(self,
+               state: State):
+        self._set_filled_cells_to_unknown()
+        self._clear_cells_seen_by_pacs(state)
+        self._fill_seen_pellets(state)
+
+    def _set_filled_cells_to_unknown(self):
+        for row in range(self.height):
+            for column in range(self.width):
+                match self.cells[row][column]:
+                    case CellState.PELLET:
+                        self.cells[row][column] = CellState.UNKNOWN
+                    case CellState.SUPER_PELLET:
+                        self.cells[row][column] = CellState.EMPTY
+
+    def _clear_cells_seen_by_pacs(self,
+                                  state: State):
+        for pac in state.pac_list:
+            if pac.mine:
+                self.clear_cells_seen_by_pac(pac)
+
+    def clear_cells_seen_by_pac(self,
+                                pac: Pac):
+        assert pac.mine
+        self.cells[pac.position.y][pac.position.x] = CellState.EMPTY
+        for direction in ALL_DIRECTIONS:
+            position: Position = pac.position
+            new_position: Optional[Position] = self.move(position, direction)
+            while new_position is not None:
+                position = new_position
+                self.set_cell(position, CellState.EMPTY)
+                new_position = self.move(position, direction)
+
+    def _fill_seen_pellets(self,
+                           state: State):
+        for pellet in state.pellet_list:
+            match pellet.value:
+                case 1:
+                    self.cells[pellet.position.y][pellet.position.x] = CellState.PELLET
+                case 10:
+                    self.cells[pellet.position.y][pellet.position.x] = CellState.SUPER_PELLET
 
 
 @dataclass
@@ -318,6 +416,8 @@ def main():
     while True:
         state: State = State()
         state.init_from_input()
+        grid.update(state)
+        # debug(str(grid))
         solver: Solver = Solver(grid, state)
         moves: list[str] = solver.get_moves()
         concatenated_moves = " | ".join(moves)

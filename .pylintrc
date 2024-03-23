@@ -186,9 +186,8 @@ function-naming-style=snake_case
 function-rgx=[a-z_][a-z0-9_]{1,60}$
 
 # Good variable names which should always be accepted, separated by a comma.
-good-names=i,
-           j,
-           k,
+good-names=i, j, k,
+           x, y, z,
            ex,
            Run,
            _

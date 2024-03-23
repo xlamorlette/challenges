@@ -1,8 +1,0 @@
-game.py:121:8: C0103: Variable name "x" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
-game.py:122:8: C0103: Variable name "y" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
-game.py:166:11: C0103: Variable name "y" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
-game.py:166:8: C0103: Variable name "x" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
-game.py:51:4: C0103: Attribute name "x" doesn't conform to '[a-z_][a-z0-9_]{1,50}$' pattern (invalid-name)
-game.py:52:4: C0103: Attribute name "y" doesn't conform to '[a-z_][a-z0-9_]{1,50}$' pattern (invalid-name)
-game.py:78:8: C0103: Variable name "x" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
-game.py:79:8: C0103: Variable name "y" doesn't conform to '[a-z_][a-z0-9_]{1,40}$' pattern (invalid-name)
