@@ -1,28 +1,20 @@
 # 35min : Bois 2
 # 50min : Bronze 846
 # 1h10 : Bronze 822
-# 2h : Bronze 815
 # 2h30 : Bronze 483
-# 2h50 : Bronze 211
-# 4h30 : Bronze 221
-# 5h20 : Bronze 362
+# 3h : Bronze 211
 # 8h : Bronze 66
+# 8h15 : Argent 664
 
 # TODO:
-# Avoid auto-blocking:
-#   get next position for all pacs
-#   for position shared by several pacs
-#     for each pac
-#       find a direction leading to another position
-#     stop when nb pacs - found another direction
-# only defensive action against opponent pac that can reach me
 # don't attack opponent pac that can switch
+# only defensive action against opponent pac that can reach me
+# attack by switching at the last time
 # Try to chase unseen pacs:
 #   Value for opponent pac that can be eaten
 #   Negative value for opponent pac that can eat if no ability to switch
 #   add to opponent pac number of turn since last seen
 #   keep seen opponent pacs one turn (or two turns)
-# attack by switching at the last time
 # Handle turn with speed only:
 #   What is exactly the input?
 #   keep in mind previously targeted pellets
@@ -30,6 +22,7 @@
 
 from __future__ import annotations
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Final, Optional
@@ -317,8 +310,7 @@ class Solver:
         target_per_pac: dict[Pac, Target] = {
             pac: self.get_target(pac) for pac in self.state.pac_list if pac.mine
         }
-        # TODO: to be redone
-        # self.solve_common_targets(target_per_pac)
+        self.solve_common_targets(target_per_pac)
         return self.get_moves_from_targets(target_per_pac)
 
     def get_target(self,
@@ -380,6 +372,24 @@ class Solver:
             current_positions = next_positions
             nb_current_positions = nb_next_positions
         return score
+
+    def solve_common_targets(self,
+                             target_per_pac: dict[Pac, Target]):
+        pac_list_per_position = defaultdict(list)
+        for pac, target in target_per_pac.items():
+            pac_list_per_position[target.explore_position].append(pac)
+        for position, pac_list in pac_list_per_position.items():
+            nb_pacs = len(pac_list)
+            if nb_pacs > 1:
+                for pac in pac_list:
+                    for direction in ALL_DIRECTIONS:
+                        next_position: Optional[Position] = self.grid.move(pac.position, direction)
+                        if next_position is not None and next_position != position:
+                            target_per_pac[pac].explore_position = next_position
+                            nb_pacs -= 1
+                            break
+                    if nb_pacs <= 1:
+                        break
 
     def get_moves_from_targets(self,
                                target_per_pac: dict[Pac, Target]) -> list[str]:
