@@ -7,15 +7,11 @@
 # 8h15 : Argent 664
 # 8h30 : Argent 474
 # 10h : Argent 376
+# 12h : Argent 146
 
 # TODO:
-# keep in mind latest two turns positions for all pacs and forbid them
 # tweak evaluation function with gamma factor
-# speed at first turn
 # keep seen opponent pacs one turn
-# Handle turn with speed only:
-#   What is exactly the input?
-#   avoid bumping self
 
 
 from __future__ import annotations
@@ -135,11 +131,18 @@ class Pellet:
         return Pellet(position=Position(x=x, y=y), value=value)
 
 
+NB_TURNS_POSITIONS_MEMORY: Final[int] = 3
+
+
 class State:
     my_score: int = 0
     opponent_score: int = 0
     pac_list: list[Pac]
     pellet_list: list[Pellet]
+    latest_pac_positions: list[list[Position]]
+
+    def __init__(self):
+        self.latest_pac_positions = [[] for _ in range(NB_TURNS_POSITIONS_MEMORY)]
 
     def init_from_input(self):
         self.my_score, self.opponent_score = [int(i) for i in input().split()]
@@ -148,6 +151,10 @@ class State:
         self.pac_list = [pac for pac in self.pac_list if pac.type_id != "DEAD"]
         visible_pellet_count = int(input())
         self.pellet_list = [Pellet.get_pellet_from_input() for i in range(visible_pellet_count)]
+        for turn_index in range(NB_TURNS_POSITIONS_MEMORY - 1):
+            self.latest_pac_positions[turn_index] = self.latest_pac_positions[turn_index + 1][:]
+        self.latest_pac_positions[NB_TURNS_POSITIONS_MEMORY - 1] = \
+            [pac.position for pac in self.pac_list if pac.mine]
 
     def get_pac_by_id(self,
                       mine: bool,
@@ -348,8 +355,8 @@ class Solver:
     def get_distance_with_speed(pac: Pac,
                                 opponent_pac: Pac) -> int:
         distance: int = pac.position.manhattan_distance(opponent_pac.position)
-        if pac.speed_turns_left > distance / 2:
-            distance /= 2
+        if pac.speed_turns_left > distance // 2:
+            distance = (distance + 1) // 2
         else:
             distance -= pac.speed_turns_left
         return distance
@@ -365,6 +372,17 @@ class Solver:
                 if score > best_score:
                     best_score = score
                     best_position = position
+        if pac.speed_turns_left > 0:
+            next_best_position: Position = best_position
+            best_score: float = 0.0
+            for direction in ALL_DIRECTIONS:
+                position = self.grid.move(best_position, direction)
+                if position is not None:
+                    score = self.evaluate_position(position)
+                    if score > best_score:
+                        best_score = score
+                        next_best_position = position
+            best_position = next_best_position
         return best_position
 
     def evaluate_position(self,
@@ -392,6 +410,9 @@ class Solver:
             nb_turns += 1
             current_positions = next_positions
             nb_current_positions = nb_next_positions
+        for positions_list in self.state.latest_pac_positions:
+            if position in positions_list:
+                score -= 1.0
         return score
 
     def solve_common_targets(self,
@@ -427,6 +448,8 @@ class Solver:
             action = self.get_attack_action(pac, target.attack_pac)
             if action is not None:
                 return action
+        if pac.ability_cooldown == 0 and pac.speed_turns_left == 0:
+            return f"SPEED {pac.pac_id} accelerate"
         text: str = ""
         match self.grid.get_cell(target.explore_position):
             case CellState.PELLET:
@@ -445,7 +468,7 @@ class Solver:
             new_type_id: str = defend_pac.get_beating_type()
             if new_type_id == pac.type_id:
                 return None
-            return f"SWITCH {pac.pac_id} {new_type_id} switch to defend against {defend_pac.pac_id}"
+            return f"SWITCH {pac.pac_id} {new_type_id} against {defend_pac.pac_id}"
         maximum_distance: int = 0
         best_position = pac.position
         for direction in ALL_DIRECTIONS:
@@ -455,15 +478,29 @@ class Solver:
                 if distance > maximum_distance:
                     maximum_distance = distance
                     best_position = new_position
-        return f"MOVE {pac.pac_id} {best_position.x} {best_position.y} run away from {defend_pac.pac_id}"
+                    if pac.speed_turns_left > 0:
+                        next_position: Optional[Position] = self.grid.move(best_position, direction)
+                        if next_position is not None:
+                            best_position = next_position
+        return f"MOVE {pac.pac_id} {best_position.x} {best_position.y} flee {defend_pac.pac_id}"
 
-    @staticmethod
-    def get_attack_action(pac: Pac,
+    def get_attack_action(self,
+                          pac: Pac,
                           attack_pac: Pac) -> Optional[str]:
+        if attack_pac.speed_turns_left > 0:
+            return None
         distance: int = pac.position.manhattan_distance(attack_pac.position)
-        if 1 < distance and distance / 2 < attack_pac.ability_cooldown and pac.ability_cooldown == 0:
-            return f"SPEED {pac.pac_id} rush to attack {attack_pac.pac_id}"
-        if distance <= 2 or pac.speed_turns_left / 2 >= distance:
+        if 1 < distance \
+                and (distance + 1) // 2 < attack_pac.ability_cooldown \
+                and pac.ability_cooldown == 0:
+            return f"SPEED {pac.pac_id} rush {attack_pac.pac_id}"
+        if distance <= 2 or pac.speed_turns_left // 2 >= distance:
+            if distance == 1:
+                direction: Position = attack_pac.position - pac.position
+                next_position: Optional[Position] = self.grid.move(attack_pac.position, direction)
+                if next_position is not None:
+                    return f"MOVE {pac.pac_id} {next_position.x} {next_position.y}" \
+                           + f" attack forward {attack_pac.pac_id}"
             return f"MOVE {pac.pac_id} {attack_pac.position.x} {attack_pac.position.y}" \
                    + f" attack {attack_pac.pac_id}"
         return None
@@ -472,8 +509,8 @@ class Solver:
 def main():
     grid: Grid = Grid()
     grid.init_from_input()
+    state: State = State()
     while True:
-        state: State = State()
         state.init_from_input()
         grid.update(state)
         solver: Solver = Solver(grid, state)
